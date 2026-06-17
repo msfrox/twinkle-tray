@@ -2,15 +2,26 @@ import React, { useState, useEffect } from "react"
 import { useObject } from "../hooks/useObject"
 import Slider from "./Slider"
 
+// Familiar icons for the editable built-ins, used when they render generically
+// without a custom icon set.
+const builtInIcons = { "0x12": "E793", "0x62": "E767", "0x60": "E839" }
+
 export default function DDCCISliders(props) {
     const { monitor, monitorFeatures } = props
+
+    const featureSettings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]
 
     const defaultValues = {}
 
     for (const vcp in monitor?.features) {
-        defaultValues[vcp] = vcp === "0x60"
-            ? monitor?.features?.[vcp] ?? 0
-            : monitor?.features?.[vcp]?.[0] ?? 0
+        // Input (0x60) is special: in its default rendering we keep the whole
+        // [current, [list]] array; once a custom control type is chosen it uses the
+        // scalar current value like every other code.
+        if (vcp === "0x60" && !featureSettings?.["0x60"]?.controlType) {
+            defaultValues[vcp] = monitor?.features?.[vcp] ?? 0
+        } else {
+            defaultValues[vcp] = monitor?.features?.[vcp]?.[0] ?? 0
+        }
     }
     const [values, setValues] = useObject(defaultValues)
 
@@ -50,16 +61,19 @@ export default function DDCCISliders(props) {
     }
 
     let extraHTML = []
-    const featureSettings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]
 
     if (monitor?.features) {
         let i = 0
-        const builtinKeys = ["0x10", "0x12", "0x13", "0x60", "0x62", "0xD6"]
+        // Brightness/backlight/power are rendered elsewhere; everything else
+        // (contrast/volume/input + custom codes) follows the saved order, with
+        // sensible defaults for the editable built-ins.
+        const fixedKeys = ["0x10", "0x13", "0xD6"]
+        const defaultOrder = { "0x12": 0, "0x62": 1, "0x60": 2 }
+        const orderOf = (v) => (featureSettings?.[v]?.order ?? defaultOrder[v] ?? 9999)
         const allKeys = Object.keys(monitor.features)
-        // Built-ins keep their natural position; custom features follow the saved order.
         const orderedKeys = [
-            ...allKeys.filter(k => builtinKeys.includes(k)),
-            ...allKeys.filter(k => !builtinKeys.includes(k)).sort((a, b) => ((featureSettings?.[a]?.order ?? 9999) - (featureSettings?.[b]?.order ?? 9999)))
+            ...allKeys.filter(k => fixedKeys.includes(k)),
+            ...allKeys.filter(k => !fixedKeys.includes(k)).sort((a, b) => orderOf(a) - orderOf(b))
         ]
         for (const vcp of orderedKeys) {
             i++
@@ -70,11 +84,13 @@ export default function DDCCISliders(props) {
 
             const feature = monitor.features[vcp]
             const featSettings = featureSettings?.[vcp] ?? {}
-            const isBuiltInFeature = (vcp === "0x12" || vcp === "0x62" || vcp === "0x60")
-            const allowWithoutValue = (!isBuiltInFeature && featSettings.controlType === "actions")
+            // Editable built-ins (contrast/volume/input) keep their special rendering
+            // until the user explicitly chooses a control type, then use the generic path.
+            const usesSpecial = (vcp === "0x12" || vcp === "0x62" || vcp === "0x60") && !featSettings.controlType
+            const allowWithoutValue = (featSettings.controlType === "actions")
             if ((feature || allowWithoutValue) && monitorFeatures?.[vcp] && !(featSettings.linked)) {
                 // Feature is enabled and not linked (action buttons may render without a current value)
-                if (vcp === "0x12") {
+                if (usesSpecial && vcp === "0x12") {
                     // Contrast
                     extraHTML.push(
                         <div className="feature-row feature-contrast" key={monitor.key + "_" + vcp}>
@@ -82,7 +98,7 @@ export default function DDCCISliders(props) {
                             <Slider type="contrast" monitorID={monitor.id} level={values[vcp]} monitorName={monitor.name} monitortype={monitor.type} onChange={val => { setValues({ [vcp]: val }); setVCP(monitor.id, parseInt(vcp), val * (monitor.features[vcp][1] / 100)) }} scrollAmount={props.scrollAmount} />
                         </div>
                     )
-                } else if (vcp === "0x62") {
+                } else if (usesSpecial && vcp === "0x62") {
                     // Volume
                     extraHTML.push(
                         <div className="feature-row feature-volume" key={monitor.key + "_" + vcp}>
@@ -90,7 +106,7 @@ export default function DDCCISliders(props) {
                             <Slider type="volume" monitorID={monitor.id} level={values[vcp]} monitorName={monitor.name} monitortype={monitor.type} onChange={val => { setValues({ [vcp]: val }); setVCP(monitor.id, parseInt(vcp), val * (monitor.features[vcp][1] / 100)) }} scrollAmount={props.scrollAmount} />
                         </div>
                     )
-                } else if (vcp === "0x60") {
+                } else if (usesSpecial && vcp === "0x60") {
                     // Input
                     extraHTML.push(
                         <div className="feature-row feature-inputs" key={monitor.key + "_" + vcp}>
@@ -114,6 +130,9 @@ export default function DDCCISliders(props) {
                         icon = (<span className="icon vfix" dangerouslySetInnerHTML={{ __html: `&#x${settings.icon};` }}></span>)
                     } else if (settings?.iconType === "text" && settings?.iconText) {
                         icon = (<span className="icon icon-text vfix">{settings.iconText}</span>)
+                    } else if (builtInIcons[vcp]) {
+                        // Editable built-in with no custom icon — keep its familiar icon.
+                        icon = (<span className="icon vfix" dangerouslySetInnerHTML={{ __html: `&#x${builtInIcons[vcp]};` }}></span>)
                     } else {
                         // Default
                         icon = (<span className="icon vfix">&#xe897;</span>)

@@ -209,6 +209,7 @@
     "SETTINGS_FEATURES_SAVE_DEFAULTS": "Save current as defaults",
     "SETTINGS_FEATURES_SAVED_DEFAULTS": "Saved defaults",
     "SETTINGS_FEATURES_REORDER": "Drag to reorder",
+    "SETTINGS_FEATURES_BUILTIN_HINT": "Using the default control. Pick a control type above to fully customize how this appears in the panel.",
     "SETTINGS_TIME_TITLE": "Time of Day Adjustments",
     "SETTINGS_TIME_DESC": "Automatically set your monitors to a specific brightness level at a desired time. All monitors will be set to the same, normalized levels.",
     "SETTINGS_TIME_ADD": "Add a time",

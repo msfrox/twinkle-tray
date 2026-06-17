@@ -11,12 +11,30 @@ uses [Semantic Versioning](https://semver.org/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| [1.17.2-ddc.5](#1172-ddc5---2026-06-18) | 2026-06-18 | Editable built-ins (contrast/volume/input) with safe dual-path rendering; unified drag-reorder for built-ins + custom features |
 | [1.17.2-ddc.4](#1172-ddc4---2026-06-18) | 2026-06-18 | More icons, control-type-neutral labels, drag-reorder the feature list, full code-reference table |
 | [1.17.2-ddc.3](#1172-ddc3---2026-06-18) | 2026-06-18 | Auto-classification, read-only/info type, rename, drag-reorder, stepped slider, defaults/reset |
 | [1.17.2-ddc.2](#1172-ddc2---2026-06-17) | 2026-06-17 | Export/import config, research docs |
 | [1.17.2-ddc.1](#1172-ddc1---2026-06-17) | 2026-06-17 | Custom control types, discovery + scan tools |
 
 ---
+
+## [1.17.2-ddc.5] - 2026-06-18
+
+### Added
+- **Editable built-ins** (#14): contrast (`0x12`), volume (`0x62`) and input (`0x60`)
+  are now first-class, editable features — rename, choose a control type, edit/label
+  values, set a default, and drag-reorder them alongside custom features. Built-ins are
+  non-deletable; brightness (`0x10`) and power (`0xD6`) stay special/system-integrated.
+- **Unified feature ordering**: built-in editables and custom codes share one
+  drag-reorder list in settings, and the brightness panel honors that order (built-ins
+  default to contrast → volume → input, then customs).
+
+### Changed
+- **Safe dual-path rendering**: until you pick a control type, contrast/volume keep their
+  familiar percentage slider and input keeps its button row (unchanged behavior). The
+  moment you choose a control type, that feature switches to the generic renderer (buttons,
+  dropdown, toggle, raw slider, action buttons, or info) using your value labels.
 
 ## [1.17.2-ddc.4] - 2026-06-18
 

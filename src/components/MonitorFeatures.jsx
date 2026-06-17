@@ -5,7 +5,21 @@ import Slider from "./Slider"
 import VCP from "../vcp-codes"
 import VCPMeta from "../vcp-meta"
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-const ignoreCodes = ["0x10", "0x12", "0x13", "0x62", "0xD6", "0x60"]
+// Brightness/backlight/power stay fully special (system-integrated) and are never
+// shown in the generic editor.
+const lockedCodes = ["0x10", "0x13", "0xD6"]
+// Contrast/volume/input are now first-class editable features (rename, control type,
+// values, reorder) but are non-deletable. They share the same generic editor as
+// custom codes; the panel keeps their special rendering until a control type is set.
+const builtInEditableCodes = ["0x12", "0x62", "0x60"]
+// Codes excluded from the "custom features" list and the add-from-list buttons.
+const ignoreCodes = [...lockedCodes, ...builtInEditableCodes]
+// Default name/icon/control type for the editable built-ins.
+const builtInMeta = {
+    "0x12": { icon: "E793", labelKey: "PANEL_LABEL_CONTRAST", control: "slider" },
+    "0x62": { icon: "E767", labelKey: "PANEL_LABEL_VOLUME", control: "slider" },
+    "0x60": { icon: "E839", labelKey: "PANEL_LABEL_INPUTS", control: "buttons" }
+}
 
 const deleteIcon = (<span className="icon" dangerouslySetInnerHTML={{ __html: "&#xE74D;" }}></span>)
 
@@ -18,27 +32,6 @@ export default function MonitorFeatures(props) {
 
     // Render a feature title with its VCP code shown grayed for identification.
     const titleWithCode = (label, code) => (<>{label} <span className="vcp-code-tag">{code}</span></>)
-
-    const inputsData = {
-        1: "VGA-1",
-        2: "VGA-2",
-        3: "DVI-1",
-        4: "DVI-2",
-        5: "Composite video 1",
-        6: "Composite video 2",
-        7: "S-Video-1",
-        8: "S-Video-2",
-        9: "Tuner-1",
-        10: "Tuner-2",
-        11: "Tuner-3",
-        12: "Component video (YPrPb/YCrCb) 1",
-        13: "Component video (YPrPb/YCrCb) 2",
-        14: "Component video (YPrPb/YCrCb) 3",
-        15: "DisplayPort-1",
-        16: "DisplayPort-2",
-        17: "HDMI-1",
-        18: "HDMI-2"
-    }
 
     if (monitor.ddcciSupported && Object.keys(monitor.features || {}).length > 0) {
 
@@ -55,77 +48,6 @@ export default function MonitorFeatures(props) {
             )
         }
 
-        // Contrast
-        if (monitor.features["0x12"]) {
-            const vcp = "0x12"
-            const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
-            const enabled = monitorFeatures?.["0x12"];
-            extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E793" title={titleWithCode(T.t("PANEL_LABEL_CONTRAST"), "0x12")} expandable={true} input={
-                    <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
-                }>
-                    <SettingsChild>
-                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
-                    </SettingsChild>
-                </SettingsOption>
-            )
-        }
-
-        // Volume
-        if (monitor.features["0x62"]) {
-            const vcp = "0x62"
-            const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
-            const enabled = monitorFeatures?.["0x62"];
-            extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E767" title={titleWithCode(T.t("PANEL_LABEL_VOLUME"), "0x62")} expandable={true} input={
-                    <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
-                }>
-                    <SettingsChild>
-                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
-                    </SettingsChild>
-                </SettingsOption>
-            )
-        }
-
-        // Input
-        if (monitor.features["0x60"] && Array.isArray(monitor.features["0x60"]) && monitor.features["0x60"][1]) {
-            const vcp = "0x60"
-            const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
-            const enabled = monitorFeatures?.["0x60"];
-            extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="e839" title={<>{titleWithCode(T.t("PANEL_LABEL_INPUTS"), "0x60")} ⚠️</>} expandable={true} input={
-                    <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
-                }>
-                    <SettingsChild description={
-                        <>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                                {(Array.isArray(monitor.features["0x60"][1]) ? monitor.features["0x60"][1] : [])?.map(e =>
-                                    <div key={e + monitor.id} className="button" style={{ color: monitor.features[vcp] === e ? "red" : '' }} disabled={monitor.features[vcp] === e}>{inputsData[e]}</div>
-                                )}
-                            </div>
-                            <div style={{ marginTop: "10px" }}>
-                                ⚠️ {T.t("GENERIC_DDC_WARNING")}
-                            </div>
-                        </>
-                    }>
-                    </SettingsChild>
-                </SettingsOption>
-            )
-        }
-
-        // Power State
-        if (monitor.features["0xD6"]) {
-            const vcp = "0xD6"
-            const enabled = monitorFeatures?.["0xD6"];
-            extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E7E8" title={<>{titleWithCode(T.t("PANEL_LABEL_OFF_ON"), "0xD6")} ⚠️</>} expandable={true} input={
-                    <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
-                }>
-                    <SettingsChild description={`⚠️ ${T.t("GENERIC_DDC_WARNING")}`} />
-                </SettingsOption>
-            )
-        }
-
         const deleteFeature = vcp => {
             if (monitorFeatures[vcp] != undefined) {
                 delete window.settings?.monitorFeatures[monitor.hwid[1]][vcp]
@@ -138,7 +60,7 @@ export default function MonitorFeatures(props) {
 
         const featSettingsOf = (v) => window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[v]
 
-        // Persist a new display order for the custom features after a drag.
+        // Persist a new display order for the features after a drag.
         const reorderFeatures = (orderedVcps) => {
             const hwidKey = monitor.hwid[1]
             if (!window.settings.monitorFeaturesSettings[hwidKey]) window.settings.monitorFeaturesSettings[hwidKey] = {}
@@ -149,17 +71,37 @@ export default function MonitorFeatures(props) {
             if (onChange) onChange()
         }
 
-        // Custom Features (drag the handle to reorder; native DnD so it doesn't
-        // nest the react-beautiful-dnd context used by each feature's value list)
-        const customVcps = Object.keys(monitorFeatures)
-            .filter(vcp => ignoreCodes.indexOf(vcp) === -1 && monitorFeatures[vcp] !== undefined)
-            .sort((a, b) => ((featSettingsOf(a)?.order ?? 9999) - (featSettingsOf(b)?.order ?? 9999)))
+        // Built-in editable features (contrast/volume/input) and custom codes share one
+        // drag-reorderable list. Built-ins keep a sensible default order and are
+        // non-deletable; everything else follows the saved order.
+        const defaultOrder = { "0x12": 0, "0x62": 1, "0x60": 2 }
+        const orderOf = (v) => (featSettingsOf(v)?.order ?? defaultOrder[v] ?? 9999)
+        const builtInPresent = builtInEditableCodes.filter(v => {
+            if (v === "0x60") return Array.isArray(monitor.features?.["0x60"]) && monitor.features["0x60"][1]
+            return monitor.features?.[v] ? true : false
+        })
+        // Drag the handle to reorder; native DnD so it doesn't nest the
+        // react-beautiful-dnd context used by each feature's value list.
+        const featureVcps = [
+            ...builtInPresent,
+            ...Object.keys(monitorFeatures || {}).filter(vcp => ignoreCodes.indexOf(vcp) === -1 && monitorFeatures[vcp] !== undefined)
+        ].sort((a, b) => orderOf(a) - orderOf(b))
 
-        customVcps.forEach((vcp, i) => {
+        featureVcps.forEach((vcp, i) => {
             const settings = featSettingsOf(vcp)
             const enabled = monitorFeatures?.[vcp];
-            const name = (settings?.name?.length ? settings.name : (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature"))
-            const icon = (settings?.iconType === "windows" && settings?.icon ? settings.icon : "E9E9")
+            const builtIn = builtInMeta[vcp] || null
+            const defaultName = builtIn ? T.t(builtIn.labelKey) : ""
+            const name = (settings?.name?.length ? settings.name
+                : (builtIn ? defaultName
+                    : (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature")))
+            const icon = (settings?.iconType === "windows" && settings?.icon ? settings.icon
+                : (builtIn ? builtIn.icon : "E9E9"))
+            // For input, seed values from the live input list; otherwise from the
+            // reported capabilities for this code.
+            const vcpInfo = (vcp === "0x60" && Array.isArray(monitor.features?.["0x60"]?.[1]) && monitor.features["0x60"][1].length
+                ? monitor.features["0x60"][1]
+                : getDetectedValues(monitor.vcpCodes, vcp))
             extraHTML.push(
                 <div className="monitor-feature-drag" key={vcp}
                     onDragOver={e => e.preventDefault()}
@@ -167,7 +109,7 @@ export default function MonitorFeatures(props) {
                         e.preventDefault()
                         const from = dragIndexRef.current
                         if (from !== null && from !== i) {
-                            const list = [...customVcps]
+                            const list = [...featureVcps]
                             const [moved] = list.splice(from, 1)
                             list.splice(i, 0, moved)
                             reorderFeatures(list)
@@ -177,17 +119,30 @@ export default function MonitorFeatures(props) {
                     <SettingsOption className="monitor-feature-item" icon={icon} title={titleWithCode(name, vcp)} expandable={true} input={
                         <div className="input-row">
                             <div className="feature-drag-handle" draggable={true} onDragStart={() => { dragIndexRef.current = i }} onDragEnd={() => { dragIndexRef.current = null }} title={T.t("SETTINGS_FEATURES_REORDER")} dangerouslySetInnerHTML={{ __html: "&#xE76F;" }}></div>
-                            <div style={{ cursor: "pointer" }} onClick={() => deleteFeature(vcp)}>{deleteIcon}</div>
+                            {builtIn ? null : <div style={{ cursor: "pointer" }} onClick={() => deleteFeature(vcp)}>{deleteIcon}</div>}
                             <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
                         </div>
                     }>
                         <SettingsChild>
-                            <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
+                            <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={vcpInfo} builtIn={builtIn} defaultName={defaultName} />
                         </SettingsChild>
                     </SettingsOption>
                 </div>
             )
         })
+
+        // Power State (special, non-editable — system-integrated)
+        if (monitor.features["0xD6"]) {
+            const vcp = "0xD6"
+            const enabled = monitorFeatures?.["0xD6"];
+            extraHTML.push(
+                <SettingsOption className="monitor-feature-item" key={vcp} icon="E7E8" title={<>{titleWithCode(T.t("PANEL_LABEL_OFF_ON"), "0xD6")} ⚠️</>} expandable={true} input={
+                    <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
+                }>
+                    <SettingsChild description={`⚠️ ${T.t("GENERIC_DDC_WARNING")}`} />
+                </SettingsOption>
+            )
+        }
 
         // VCP code list
         if (monitor.vcpCodes && typeof monitor.vcpCodes === 'object' && Object.values(monitor.vcpCodes).length) {
@@ -245,17 +200,24 @@ export default function MonitorFeatures(props) {
 }
 
 function MonitorFeaturesSettings(props) {
-    const { enabled, settings, hwid, vcp, onChange, T, vcpInfo, monitorId } = props
+    const { enabled, settings, hwid, vcp, onChange, T, vcpInfo, monitorId, builtIn, defaultName } = props
     //if(!enabled) return (<></>);
 
     const detectedValues = Array.isArray(vcpInfo) ? vcpInfo : []
-    const isBuiltIn = ignoreCodes.indexOf(vcp) !== -1
+    // Locked codes (brightness/backlight/power) never reach this editor. Built-in
+    // editables (contrast/volume/input) get the full editor like custom codes, but
+    // their control type is not auto-persisted — the panel keeps the special
+    // rendering until the user explicitly chooses a control type.
+    const isLocked = lockedCodes.indexOf(vcp) !== -1
+    const isBuiltInEditable = !!builtIn
     const meta = VCPMeta[parseInt(vcp)]
-    // Pick a default control type: known MCCS metadata first, then capability-based.
+    // Pick a default control type: built-in default, then known MCCS metadata, then
+    // capability-based.
     const defaultControlType = (
-        isBuiltIn ? "slider"
-            : (meta ? meta.control
-                : (detectedValues.length ? (detectedValues.length > 6 ? "dropdown" : "buttons") : "slider"))
+        isLocked ? "slider"
+            : (builtIn?.control
+                || (meta ? meta.control
+                    : (detectedValues.length ? (detectedValues.length > 6 ? "dropdown" : "buttons") : "slider")))
     )
 
     const [settingsObj, updateSettings] = useObject(Object.assign({
@@ -298,7 +260,7 @@ function MonitorFeaturesSettings(props) {
     // auto-detected default + values so the brightness panel renders the right
     // control instead of a slider.
     useEffect(() => {
-        if (!isBuiltIn && !settings?.controlType) {
+        if (!isLocked && !isBuiltInEditable && !settings?.controlType) {
             const updates = { controlType: defaultControlType }
             if (discreteControlTypes.indexOf(defaultControlType) !== -1) {
                 updates.values = makeValueList(vcp, detectedValues)
@@ -419,7 +381,7 @@ function MonitorFeaturesSettings(props) {
 
     const sliderSettings = (
         <>
-            {!isBuiltIn && !settingsObj.linked ?
+            {!isLocked && !settingsObj.linked ?
                 <div className="input-row">
                     <div className="field"><label>{T.t("GENERIC_MINIMUM")}</label><input type="number" value={settingsObj.sliderMin ?? 0} onChange={e => onChangeHandler("sliderMin", e.target.value === "" ? "" : parseInt(e.target.value))} /></div>
                     <div className="field"><label>{T.t("GENERIC_MAXIMUM")}</label><input type="number" value={settingsObj.sliderMax ?? 100} onChange={e => onChangeHandler("sliderMax", e.target.value === "" ? "" : parseInt(e.target.value))} /></div>
@@ -504,10 +466,21 @@ function MonitorFeaturesSettings(props) {
         <div className="input-row">
             <div className="field" style={{ flex: 1 }}>
                 <label>{T.t("SETTINGS_FEATURES_NAME")}</label>
-                <input type="text" value={settingsObj.name || ""} placeholder="Custom Feature" onChange={e => onChangeHandler("name", e.target.value)} />
+                <input type="text" value={settingsObj.name || ""} placeholder={defaultName || "Custom Feature"} onChange={e => onChangeHandler("name", e.target.value)} />
             </div>
         </div>
     )
+
+    // Built-in editables keep the special panel rendering until a control type is
+    // explicitly chosen; let the user know that's what's happening.
+    const builtInHint = (isBuiltInEditable && !settings?.controlType) ? (
+        <p className="description feature-info-note">{T.t("SETTINGS_FEATURES_BUILTIN_HINT")}</p>
+    ) : null
+
+    // Switching inputs can leave the display without signal — warn for input control.
+    const inputWarning = (vcp === "0x60") ? (
+        <p className="description feature-info-note">⚠️ {T.t("GENERIC_DDC_WARNING")}</p>
+    ) : null
 
     const infoEditor = (
         <p className="description feature-info-note">{T.t("SETTINGS_FEATURES_INFO_DESC")}</p>
@@ -525,15 +498,17 @@ function MonitorFeaturesSettings(props) {
 
     return (
         <div className="feature-toggle-settings">
-            {!isBuiltIn ? nameField : null}
-            {!isBuiltIn ? iconSettings : null}
-            {!isBuiltIn ? controlTypeField : null}
+            {inputWarning}
+            {!isLocked ? nameField : null}
+            {!isLocked ? iconSettings : null}
+            {!isLocked ? controlTypeField : null}
+            {builtInHint}
             {controlType === "slider" ? sliderSettings : null}
             {(controlType === "buttons" || controlType === "dropdown" || controlType === "actions") ? valueEditor : null}
             {controlType === "toggle" ? toggleEditor : null}
             {controlType === "info" ? infoEditor : null}
-            {!isBuiltIn && controlType !== "info" && controlType !== "actions" ? defaultsRow : null}
-            {!isBuiltIn && controlType !== "info" ? <DiscoveryTool vcp={vcp} monitorId={monitorId} valueList={valueList} onSave={upsertValue} T={T} /> : null}
+            {!isLocked && controlType !== "info" && controlType !== "actions" ? defaultsRow : null}
+            {!isLocked && controlType !== "info" ? <DiscoveryTool vcp={vcp} monitorId={monitorId} valueList={valueList} onSave={upsertValue} T={T} /> : null}
         </div>
     )
 }

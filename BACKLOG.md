@@ -37,15 +37,13 @@ A full rewrite would risk the whole app, permanently un-merge from upstream, and
 for no marginal gain.
 
 ## ▶ Next (in order)
-- [ ] **#14 — Editable built-ins** *(START HERE)*. Make contrast (`0x12`), volume (`0x62`),
-      input (`0x60`) first-class **editable** features (rename, control type, values, reorder,
-      placement); keep brightness (`0x10`) and power (`0xD6`) special (system-integrated).
-      **Safe dual-path:** in the panel, keep the existing special rendering when no custom
-      `controlType` is saved; switch to the generic renderer once the user customizes. Remove
-      `0x12/0x62/0x60` from `ignoreCodes` so they show the full editor; mark them non-deletable.
-      Input/contrast/volume already auto-classify (meta + capability values + the `0x60` label
-      map in `knownValueLabels`), so seeding is mostly free. Smoke-test brightness/contrast/
-      volume/input before committing.
+- [x] **#14 — Editable built-ins** *(done, v1.17.2-ddc.5)*. Contrast (`0x12`), volume (`0x62`)
+      and input (`0x60`) are now first-class **editable** features (rename, control type,
+      values, default, drag-reorder); brightness (`0x10`) and power (`0xD6`) stay special.
+      Implemented as a **safe dual-path**: the panel keeps the special percentage slider /
+      input buttons until a `controlType` is saved, then uses the generic renderer. Built-ins
+      and customs share one reorder list (`MonitorFeatures.jsx` `featureVcps`; `DDCCISliders.jsx`
+      `orderOf`); built-ins are non-deletable and don't auto-persist a control type.
 - [ ] **#11 — Grouped / multi-control** (RGB etc.; see below).
 - [ ] **#12 + #13 — Active/Disconnected monitor groups + dashboard** (see below; design agreed).
 - [ ] **Per-code value scale / transform** — LG Black Stabilizer `0xF9` writes 0–20 but reports
