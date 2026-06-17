@@ -38,10 +38,12 @@ export default class Slider extends Component {
     cap = (level) => {
         const min = (this.props.min || 0) * 1
         const max = (this.props.max || 100) * 1
+        const step = (this.props.step || 1) * 1
         let capped = level * 1
-        if (level < min) {
+        if (step > 1) capped = Math.round(capped / step) * step
+        if (capped < min) {
             capped = min
-        } else if (level > max) {
+        } else if (capped > max) {
             capped = max
         }
         return capped
@@ -79,10 +81,10 @@ export default class Slider extends Component {
                 {this.getName()}
                 <div className="input--range" data-height={this.props.height}>
                     <div className="rangeGroup">
-                        <input type="range" min={min} max={max} value={level} data-percent={level + "%"} onChange={this.handleChange} className="range" />
+                        <input type="range" min={min} max={max} step={(this.props.step || 1)} value={level} data-percent={level + "%"} onChange={this.handleChange} className="range" />
                         <div className="progress" style={this.progressStyle()}></div>
                     </div>
-                    <input type="number" min={min} max={max} value={Math.floor(level)} onChange={this.handleChange} className="val" />
+                    <input type="number" min={min} max={max} step={(this.props.step || 1)} value={Math.floor(level)} onChange={this.handleChange} className="val" />
                 </div>
             </div>
         );

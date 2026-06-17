@@ -633,6 +633,39 @@ select {
         opacity: 0.7;
         &:hover { opacity: 1; }
     }
+    .feature-value-reorder {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+
+        .reorder-btn {
+            font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+            font-size: 11px;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.6;
+
+            &:hover { opacity: 1; }
+            &[data-disabled="true"] { opacity: 0.15; pointer-events: none; }
+        }
+    }
+}
+.feature-info-note {
+    opacity: 0.7;
+    font-size: 12px;
+}
+.feature-default-row {
+    align-items: flex-end;
+    margin-top: 8px;
+
+    .button { align-self: flex-end; }
+}
+.vcp-scan-saved-note {
+    margin-left: 10px;
+    opacity: 0.8;
+    font-size: 12px;
+    align-self: center;
 }
 .vcp-add-button {
     padding: 4px 10px !important;

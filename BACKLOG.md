@@ -37,6 +37,31 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
       `0xC9`, frequencies `0xAC`/`0xAE`). Add a "display only" control type that just shows
       the value — not a slider/switch/button.
 
+## Upstream PR notes (when we submit)
+Our work directly matches existing community demand and the maintainer's stated intent —
+reference these in the PR:
+- **PR #790** (jessicah, WIP "use buttons for commands with a fixed set of values"). Maintainer
+  (@xanderfrangos) said his intent was *"an option in the new DDC/CI Features settings, per
+  feature, allowing users to manually define values for a VCP code instead [of a percentage]"* —
+  exactly what we built. Credit it; our work completes that vision.
+- **Issue #1241** ("disable percentage mapping for non-continuous VCP features") — our raw-value
+  controls + control types **resolve** this. Also relates to #1259/#1260 (slider scroll step) and
+  the stepped slider.
+- Dominant issue theme = **DDC detection reliability/instability** (#1256, #1233, #1238, #1228,
+  #1242, #1222, …) and active PR **#1262** (detection reliability). Our "training resilience"
+  (monitor disappears mid-test) fits this; build on #1262, don't conflict.
+- Dev tip from maintainer: **`Ctrl+I`** opens the inspector/devtools in-app (CSS debugging).
+- Most of the 302 forks are dormant/translation mirrors, but a few are active and instructive:
+  - **twinkle-tray-plus** (atSridharIyer, active) — brightness+contrast **presets** (Save/Load
+    slots, "Dark" zero-all, auto Previous-state), **per-display power** (DDC backlight-off; the
+    monitor stays *logically connected*), contrast-linking, mute-on-dark, display-sleep-timer.
+    All gated behind an opt-in **"Plus" toggle** in Settings. Complementary to us (presets/
+    contrast/power vs our generic VCP control types + discovery). Also hit a **VS2026 native
+    build issue**, fixed via a CL define / patch-package — note if we see build errors.
+  - **twinkletrayplusplus** (anmolbyte) — early **C#/Avalonia rewrite** experiment; references
+    **Monitorian** (a mature C# Windows brightness tool — good reference implementation).
+  - **twinkle-tray-iBasso-Macchiato** — niche repurpose (controls a DAC's volume), not relevant.
+
 ## 📋 Backlog (bigger pieces)
 
 ### Online settings database (community config sharing)
@@ -87,3 +112,11 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
   breaking a training session. Add a **training/pinned mode** that keeps the feature config
   and discovery state alive across disconnect/reconnect, and tolerates a missing monitor
   without dropping its settings.
+- Insight from twinkle-tray-plus: a DDC **backlight-off** leaves the monitor *logically connected*
+  (Windows still sees it), whereas a full power-off (`0xD6=5`) can truly disconnect it. For
+  testing, prefer backlight-off semantics where possible, and/or pin the training UI so a
+  transient disconnect doesn't wipe the in-progress config.
+
+### Brightness/contrast presets (from twinkle-tray-plus)
+- Named brightness+contrast snapshots with Save/Load slots, a "Dark" (zero-all) action, and
+  auto-captured "Previous" state. Richer evolution of our defaults/reset idea.

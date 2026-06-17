@@ -3,6 +3,7 @@ import { useObject } from "../hooks/useObject"
 import { SettingsOption, SettingsChild } from "./SettingsOption";
 import Slider from "./Slider"
 import VCP from "../vcp-codes"
+import VCPMeta from "../vcp-meta"
 const ignoreCodes = ["0x10", "0x12", "0x13", "0x62", "0xD6", "0x60"]
 
 const deleteIcon = (<span className="icon" dangerouslySetInnerHTML={{ __html: "&#xE74D;" }}></span>)
@@ -176,7 +177,7 @@ export default function MonitorFeatures(props) {
                 extraHTML.push(
                     <SettingsOption className="monitor-feature-item" key={"vcp-codes"} description={T.t("SETTINGS_FEATURES_VCP_LIST_TITLE")} expandable={true} forceExpandable={true}>
                         <SettingsChild>
-                            <VcpScanner monitor={monitor} T={T} />
+                            <VcpScanner monitor={monitor} hwid={monitor.hwid[1]} T={T} />
                             <div className="detected-vcp-codes">
                                 <div className="vcp-code">⚠️ {T.t("SETTINGS_FEATURES_VCP_LIST_DESC")}<br /><br /></div>
                                 {list}
@@ -212,19 +213,29 @@ function MonitorFeaturesSettings(props) {
 
     const detectedValues = Array.isArray(vcpInfo) ? vcpInfo : []
     const isBuiltIn = ignoreCodes.indexOf(vcp) !== -1
-    // Discrete codes default to a value-based control; long lists default to a dropdown.
-    const defaultControlType = (!isBuiltIn && detectedValues.length ? (detectedValues.length > 6 ? "dropdown" : "buttons") : "slider")
+    const meta = VCPMeta[parseInt(vcp)]
+    // Pick a default control type: known MCCS metadata first, then capability-based.
+    const defaultControlType = (
+        isBuiltIn ? "slider"
+            : (meta ? meta.control
+                : (detectedValues.length ? (detectedValues.length > 6 ? "dropdown" : "buttons") : "slider"))
+    )
 
     const [settingsObj, updateSettings] = useObject(Object.assign({
         icon: "e897",
         iconType: "windows",
         iconText: "",
         iconPath: "",
+        name: "",
         controlType: defaultControlType,
         values: makeValueList(vcp, detectedValues),
         min: 0,
         max: 100,
         maxVisual: 100,
+        sliderMin: 0,
+        sliderMax: 100,
+        step: 1,
+        defaultValue: "",
         linked: false
     }, settings))
 
@@ -250,8 +261,12 @@ function MonitorFeaturesSettings(props) {
     // auto-detected default + values so the brightness panel renders the right
     // control instead of a slider.
     useEffect(() => {
-        if (!isBuiltIn && detectedValues.length && !settings?.controlType) {
-            persist({ controlType: defaultControlType, values: makeValueList(vcp, detectedValues) })
+        if (!isBuiltIn && !settings?.controlType && (meta || detectedValues.length)) {
+            const updates = { controlType: defaultControlType }
+            if (discreteControlTypes.indexOf(defaultControlType) !== -1) {
+                updates.values = makeValueList(vcp, detectedValues)
+            }
+            persist(updates)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -264,6 +279,13 @@ function MonitorFeaturesSettings(props) {
     const updateValueAt = (i, key, value) => setValueList(valueList.map((row, idx) => idx === i ? Object.assign({}, row, { [key]: value }) : row))
     const addValueRow = () => setValueList([...valueList, { value: 0, label: "" }])
     const removeValueRow = (i) => setValueList(valueList.filter((_, idx) => idx !== i))
+    const moveValueRow = (i, dir) => {
+        const j = i + dir
+        if (j < 0 || j >= valueList.length) return
+        const list = [...valueList]
+        const tmp = list[i]; list[i] = list[j]; list[j] = tmp
+        setValueList(list)
+    }
     const detectValueList = () => setValueList(makeValueList(vcp, detectedValues))
     // Add a value/label pair, or update the label if the value already exists.
     const upsertValue = (value, label) => {
@@ -272,6 +294,14 @@ function MonitorFeaturesSettings(props) {
             ? valueList.map((r, i) => i === idx ? Object.assign({}, r, { label }) : r)
             : [...valueList, { value, label }]
         setValueList(list)
+    }
+
+    // Write a value to the monitor live (used by "reset to default").
+    const writeLive = (value) => {
+        if (monitorId === undefined || monitorId === null) return
+        const v = parseInt(value)
+        if (isNaN(v)) return
+        window.dispatchEvent(new CustomEvent("setVCP", { detail: { monitor: monitorId, code: parseInt(vcp), value: v } }))
     }
 
     // Toggle helpers (always exactly two entries: [off, on])
@@ -338,6 +368,7 @@ function MonitorFeaturesSettings(props) {
                     <option value="dropdown">{T.t("SETTINGS_FEATURES_TYPE_DROPDOWN")}</option>
                     <option value="toggle">{T.t("SETTINGS_FEATURES_TYPE_TOGGLE")}</option>
                     <option value="actions">{T.t("SETTINGS_FEATURES_TYPE_ACTIONS")}</option>
+                    <option value="info">{T.t("SETTINGS_FEATURES_TYPE_INFO")}</option>
                 </select>
             </div>
         </div>
@@ -345,20 +376,31 @@ function MonitorFeaturesSettings(props) {
 
     const sliderSettings = (
         <>
-            <div className="input-row">
-                <Slider min={0} max={100} name={T.t("GENERIC_MINIMUM")} onChange={value => onChangeHandler("min", value)} level={settingsObj.min} scrolling={false} height={"short"} icon={false} />
-                <Slider min={0} max={100} name={T.t("GENERIC_MAXIMUM")} onChange={value => onChangeHandler("max", value)} level={settingsObj.max} scrolling={false} height={"short"} icon={false} />
-            </div>
+            {!isBuiltIn && !settingsObj.linked ?
+                <div className="input-row">
+                    <div className="field"><label>{T.t("GENERIC_MINIMUM")}</label><input type="number" value={settingsObj.sliderMin ?? 0} onChange={e => onChangeHandler("sliderMin", e.target.value === "" ? "" : parseInt(e.target.value))} /></div>
+                    <div className="field"><label>{T.t("GENERIC_MAXIMUM")}</label><input type="number" value={settingsObj.sliderMax ?? 100} onChange={e => onChangeHandler("sliderMax", e.target.value === "" ? "" : parseInt(e.target.value))} /></div>
+                    <div className="field"><label>{T.t("SETTINGS_FEATURES_STEP")}</label><input type="number" min={1} value={settingsObj.step ?? 1} onChange={e => onChangeHandler("step", Math.max(1, parseInt(e.target.value) || 1))} /></div>
+                </div>
+                : null}
             <div className="input-row">
                 <div className="feature-toggle-row">
                     <input onChange={e => onChangeHandler("linked", e.target.checked)} checked={(settingsObj.linked ? true : false)} data-checked={(settingsObj.linked ? true : false)} type="checkbox" />
                     <div className="feature-toggle-label"><span>{T.t("SETTINGS_FEATURES_LINKED_TO_BRIGHTNESS")}</span></div>
                 </div>
             </div>
-            <div style={{ display: (settingsObj.linked ? "block" : "none") }}>
-                <br />
-                <Slider min={0} max={100} name={T.t("SETTINGS_FEATURES_STOP_ON_BRIGHTNESS")} onChange={value => onChangeHandler("maxVisual", value)} level={settingsObj.maxVisual ?? 100} scrolling={false} height={"short"} icon={false} />
-            </div>
+            {settingsObj.linked ?
+                <>
+                    <div className="input-row">
+                        <Slider min={0} max={100} name={T.t("GENERIC_MINIMUM")} onChange={value => onChangeHandler("min", value)} level={settingsObj.min} scrolling={false} height={"short"} icon={false} />
+                        <Slider min={0} max={100} name={T.t("GENERIC_MAXIMUM")} onChange={value => onChangeHandler("max", value)} level={settingsObj.max} scrolling={false} height={"short"} icon={false} />
+                    </div>
+                    <div>
+                        <br />
+                        <Slider min={0} max={100} name={T.t("SETTINGS_FEATURES_STOP_ON_BRIGHTNESS")} onChange={value => onChangeHandler("maxVisual", value)} level={settingsObj.maxVisual ?? 100} scrolling={false} height={"short"} icon={false} />
+                    </div>
+                </>
+                : null}
         </>
     )
 
@@ -367,7 +409,11 @@ function MonitorFeaturesSettings(props) {
             <p className="description">{T.t("SETTINGS_FEATURES_VALUES_DESC")}</p>
             {valueList.map((row, i) => (
                 <div className="input-row feature-value-row" key={i}>
-                    <div className="field" style={{ flex: "0 0 90px" }}>
+                    <div className="feature-value-reorder">
+                        <span className="reorder-btn" data-disabled={i === 0} onClick={() => moveValueRow(i, -1)} dangerouslySetInnerHTML={{ __html: "&#xE70E;" }}></span>
+                        <span className="reorder-btn" data-disabled={i === valueList.length - 1} onClick={() => moveValueRow(i, 1)} dangerouslySetInnerHTML={{ __html: "&#xE70D;" }}></span>
+                    </div>
+                    <div className="field" style={{ flex: "0 0 80px" }}>
                         {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE")}</label> : null}
                         <input type="number" value={row.value} onChange={e => updateValueAt(i, "value", e.target.value === "" ? "" : parseInt(e.target.value))} />
                     </div>
@@ -401,14 +447,40 @@ function MonitorFeaturesSettings(props) {
         </div>
     )
 
+    const nameField = (
+        <div className="input-row">
+            <div className="field" style={{ flex: 1 }}>
+                <label>{T.t("SETTINGS_FEATURES_NAME")}</label>
+                <input type="text" value={settingsObj.name || ""} placeholder="Custom Feature" onChange={e => onChangeHandler("name", e.target.value)} />
+            </div>
+        </div>
+    )
+
+    const infoEditor = (
+        <p className="description feature-info-note">{T.t("SETTINGS_FEATURES_INFO_DESC")}</p>
+    )
+
+    const defaultsRow = (
+        <div className="input-row feature-default-row">
+            <div className="field" style={{ flex: "0 0 130px" }}>
+                <label>{T.t("SETTINGS_FEATURES_DEFAULT")}</label>
+                <input type="number" value={settingsObj.defaultValue ?? ""} placeholder="—" onChange={e => onChangeHandler("defaultValue", e.target.value === "" ? "" : parseInt(e.target.value))} />
+            </div>
+            <a className="button" data-disabled={settingsObj.defaultValue === "" || settingsObj.defaultValue === undefined} onClick={() => writeLive(settingsObj.defaultValue)}>{T.t("SETTINGS_FEATURES_RESET_DEFAULT")}</a>
+        </div>
+    )
+
     return (
         <div className="feature-toggle-settings">
+            {!isBuiltIn ? nameField : null}
             {!isBuiltIn ? iconSettings : null}
             {!isBuiltIn ? controlTypeField : null}
             {controlType === "slider" ? sliderSettings : null}
             {(controlType === "buttons" || controlType === "dropdown" || controlType === "actions") ? valueEditor : null}
             {controlType === "toggle" ? toggleEditor : null}
-            {!isBuiltIn ? <DiscoveryTool vcp={vcp} monitorId={monitorId} valueList={valueList} onSave={upsertValue} T={T} /> : null}
+            {controlType === "info" ? infoEditor : null}
+            {!isBuiltIn && controlType !== "info" && controlType !== "actions" ? defaultsRow : null}
+            {!isBuiltIn && controlType !== "info" ? <DiscoveryTool vcp={vcp} monitorId={monitorId} valueList={valueList} onSave={upsertValue} T={T} /> : null}
         </div>
     )
 }
@@ -535,12 +607,33 @@ function BrightnessFeatureSettings(props) {
  * highlights which code/value changed — a fast way to identify what each code does.
  */
 function VcpScanner(props) {
-    const { monitor, T } = props
+    const { monitor, hwid, T } = props
     const [values, setValues] = useState(null)
     const [changed, setChanged] = useState({})
     const [scanCount, setScanCount] = useState(0)
     const [scanning, setScanning] = useState(false)
+    const [savedDefaults, setSavedDefaults] = useState(null)
     const valuesRef = useRef(null)
+
+    // Capture the current scanned values as each enabled feature's "default value"
+    // (e.g. run this right after a factory reset to record the monitor's defaults).
+    const saveAsDefaults = () => {
+        if (!values || !hwid) return
+        const mfs = window.settings.monitorFeaturesSettings || (window.settings.monitorFeaturesSettings = {})
+        if (!mfs[hwid]) mfs[hwid] = {}
+        const features = window.settings.monitorFeatures?.[hwid] || {}
+        let count = 0
+        for (const k in values) {
+            const hex = "0x" + parseInt(k).toString(16).toUpperCase()
+            if (features[hex] !== undefined && values[k] !== -1) {
+                if (!mfs[hwid][hex]) mfs[hwid][hex] = {}
+                mfs[hwid][hex].defaultValue = values[k]
+                count++
+            }
+        }
+        if (window.sendSettings) window.sendSettings({ monitorFeaturesSettings: JSON.parse(JSON.stringify(mfs)) })
+        setSavedDefaults(count)
+    }
 
     useEffect(() => {
         const handler = (e) => {
@@ -580,6 +673,8 @@ function VcpScanner(props) {
             <p className="description">{T.t("SETTINGS_FEATURES_SCAN_DESC")}</p>
             <div className="input-row">
                 <a className="button" onClick={scan}>{scanLabel}</a>
+                {values ? <a className="button" onClick={saveAsDefaults}>{T.t("SETTINGS_FEATURES_SAVE_DEFAULTS")}</a> : null}
+                {savedDefaults !== null ? <span className="vcp-scan-saved-note">{T.t("SETTINGS_FEATURES_SAVED_DEFAULTS")}: {savedDefaults}</span> : null}
             </div>
             {values ?
                 <div className="vcp-scan-results">

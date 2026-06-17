@@ -159,12 +159,24 @@ export default function DDCCISliders(props) {
                                 </label>
                             </div>
                         )
+                    } else if (type === "info") {
+                        // Read-only info value (just display, no control)
+                        const current = (Array.isArray(feature) ? feature[0] : values[vcp])
+                        extraHTML.push(
+                            <div className="feature-row feature-info-row" key={monitor.key + "_" + vcp}>
+                                <div className="feature-icon">{icon}</div>
+                                <div className="feature-info-value">{current ?? "—"}</div>
+                            </div>
+                        )
                     } else {
-                        // Slider (default)
+                        // Slider — raw min/max/step, sends the raw value directly
+                        const sMin = (settings.sliderMin ?? 0)
+                        const sMax = (settings.sliderMax ?? featureMax)
+                        const sStep = (settings.step ?? 1)
                         extraHTML.push(
                             <div className="feature-row feature-volume" key={monitor.key + "_" + vcp}>
                                 <div className="feature-icon">{icon}</div>
-                                <Slider type="custom" monitorID={monitor.id} level={values[vcp]} monitorName={monitor.name} monitortype={monitor.type} onChange={val => { setValues({ [vcp]: val }); setVCP(monitor.id, parseInt(vcp), val * (featureMax / 100)) }} scrollAmount={props.scrollAmount} />
+                                <Slider type="custom" min={sMin} max={sMax} step={sStep} monitorID={monitor.id} level={values[vcp]} monitorName={monitor.name} monitortype={monitor.type} onChange={val => { setValues({ [vcp]: val }); setVCP(monitor.id, parseInt(vcp), val) }} scrollAmount={props.scrollAmount} />
                             </div>
                         )
                     }

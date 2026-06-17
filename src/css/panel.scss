@@ -441,6 +441,23 @@ body[data-is-win11="false"] #root {
     }
 }
 
+// Custom feature: read-only info value (display only)
+.feature-info-row {
+    height: auto;
+    align-items: center;
+
+    .feature-icon {
+        height: 30px;
+        align-items: center;
+    }
+}
+.feature-info-value {
+    flex: 1;
+    color: var(--page-text);
+    opacity: 0.85;
+    font-size: 14px;
+}
+
 // Custom feature: dropdown control (custom, not a native <select>, so opening it
 // doesn't blur and auto-hide the panel; also keeps text readable in dark mode).
 .feature-dropdown-row {
