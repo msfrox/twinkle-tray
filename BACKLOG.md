@@ -32,6 +32,10 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
       mangles raw values — fix as part of this).
 - [ ] **Defaults capture & reset** — capture factory-default values (after a reset, or via
       a scan) and offer per-feature / global "reset to default."
+- [ ] **Read-only / info control type** — some codes are *information*, not settings (e.g.
+      Display Technology Type `0xB6`, Sub-pixel layout `0xB2`, usage time `0xC6`, firmware
+      `0xC9`, frequencies `0xAC`/`0xAE`). Add a "display only" control type that just shows
+      the value — not a slider/switch/button.
 
 ## 📋 Backlog (bigger pieces)
 
@@ -43,6 +47,17 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
 - **Conflict resolution** when a model config already exists (merge, versioning, or
   voting/curation). Need a schema keyed by model (and possibly firmware).
 - Privacy: opt-in upload; no personal data, just model + VCP maps.
+- **Use one universal source — don't fracture the community.** Align with / contribute to an
+  existing DB (`ddccontrol-db`, or `ddcutil` UDF format keyed by EDID) instead of a competing silo.
+- **Hybrid data model (important):** community DBs store *what* a code is (code → meaning), but
+  Twinkle Tray also needs *how to render it* (control type, value labels, step, read-only,
+  grouping). The app has no AI to infer this, so we keep **our own metadata layer** (control-type
+  + UI hints per code/model) layered on top of the community code identities.
+- **"Master profiles" per brand** (LG master, Samsung master, …): a feature-rich superset of
+  common codes for a brand (or model subset). Like a universal remote — even if a given model
+  lacks a feature, the controls that *do* map work, and the rest are harmless no-ops. Build the
+  **LG master profile first** as a proof of concept. Large effort, likely needs going through the
+  whole community DB brand by brand.
 
 ### Grouped / multi-control features
 - Some settings are **multiple sliders for one logical control** (e.g. RGB gain =

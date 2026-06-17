@@ -248,6 +248,14 @@ ipc.on("vcp-scan-result", (event, data) => {
     window.dispatchEvent(new CustomEvent("vcp-scan-result", { detail: data }))
 })
 
+// Export / import monitor config (backup + sharing)
+function exportSettings() {
+    ipc.send("export-settings")
+}
+function importSettings() {
+    ipc.send("import-settings")
+}
+
 const SunCalc = require('suncalc')
 function getSunCalcTimes(lat, long) {
     const localTimes = SunCalc.getTimes(new Date(), lat, long)
@@ -260,6 +268,8 @@ function getSunCalcTimes(lat, long) {
 
 window.ipc = ipc
 window.scanVCP = scanVCP
+window.exportSettings = exportSettings
+window.importSettings = importSettings
 window.updateBrightness = updateBrightness
 window.requestMonitors = requestMonitors
 window.sendSettings = sendSettings

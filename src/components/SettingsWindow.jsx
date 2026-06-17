@@ -1395,7 +1395,15 @@ export default class SettingsWindow extends PureComponent {
                                         </select>
                                     }>
                                         <SettingsChild description={<>⚠️ <em>{T.t("SETTINGS_FEATURES_POWER_WARNING")}</em></>} />
-                                    </SettingsOption>                                
+                                    </SettingsOption>
+                                </div>
+                                <div className="pageSection">
+                                    <SettingsOption title={T.t("SETTINGS_FEATURES_IO_TITLE")} description={T.t("SETTINGS_FEATURES_IO_DESC")} input={
+                                        <div className="input-row">
+                                            <input type="button" className="button" value={T.t("SETTINGS_FEATURES_EXPORT")} onClick={() => { if (window.exportSettings) window.exportSettings() }} />
+                                            <input type="button" className="button" value={T.t("SETTINGS_FEATURES_IMPORT")} onClick={() => { if (window.importSettings) window.importSettings() }} />
+                                        </div>
+                                    } />
                                 </div>
                             </SettingsPage>
 

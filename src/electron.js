@@ -2500,6 +2500,64 @@ ipcMain.on('scan-vcp', async (e, data) => {
   try { e.sender.send('vcp-scan-result', { monitor: data?.monitor, values: result }) } catch (err) { }
 })
 
+// Export the monitor feature config (control types, value labels, code mappings)
+// to a JSON file the user can back up or share.
+ipcMain.on('export-settings', async () => {
+  try {
+    const payload = {
+      _twinkleTrayConfig: true,
+      version: app.getVersion(),
+      exportedAt: new Date().toISOString(),
+      monitorFeatures: settings.monitorFeatures || {},
+      monitorFeaturesSettings: settings.monitorFeaturesSettings || {},
+      userDDCBrightnessVCPs: settings.userDDCBrightnessVCPs || {}
+    }
+    const result = await require('electron').dialog.showSaveDialog({
+      title: "Export monitor config",
+      buttonLabel: 'Export',
+      defaultPath: app.getPath("desktop") + `\\twinkle-tray-config-${Date.now()}.json`,
+      filters: [{ name: "JSON", extensions: ["json"] }]
+    })
+    if (result?.filePath) {
+      fs.writeFileSync(result.filePath, JSON.stringify(payload, null, '\t'))
+    }
+  } catch (e) {
+    console.log("export-settings failed", e)
+  }
+})
+
+// Import a config file and merge it into settings (per-hwid/per-code, so other
+// monitors' configs are preserved).
+ipcMain.on('import-settings', async () => {
+  try {
+    const result = await require('electron').dialog.showOpenDialog({
+      title: "Import monitor config",
+      buttonLabel: 'Import',
+      properties: ['openFile'],
+      filters: [{ name: "JSON", extensions: ["json"] }]
+    })
+    const filePath = result?.filePaths?.[0]
+    if (!filePath) return;
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+
+    const mergeByHwid = (base, incoming) => {
+      const out = Object.assign({}, base || {})
+      for (const hwid in (incoming || {})) {
+        out[hwid] = Object.assign({}, out[hwid] || {}, incoming[hwid])
+      }
+      return out
+    }
+
+    writeSettings({
+      monitorFeatures: mergeByHwid(settings.monitorFeatures, data.monitorFeatures),
+      monitorFeaturesSettings: mergeByHwid(settings.monitorFeaturesSettings, data.monitorFeaturesSettings),
+      userDDCBrightnessVCPs: Object.assign({}, settings.userDDCBrightnessVCPs || {}, data.userDDCBrightnessVCPs || {})
+    }, true, true)
+  } catch (e) {
+    console.log("import-settings failed", e)
+  }
+})
+
 ipcMain.on('get-window-history', () => sendToAllWindows('window-history', windowHistory))
 
 ipcMain.on('save-report', async () => {
