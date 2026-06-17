@@ -702,6 +702,17 @@ select {
     font-size: 0.9em;
     margin-left: 4px;
 }
+.feature-drag-handle {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    cursor: grab;
+    opacity: 0.45;
+    font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+
+    &:hover { opacity: 0.9; }
+    &:active { cursor: grabbing; }
+}
 .vcp-scanner {
     margin-bottom: 16px;
 

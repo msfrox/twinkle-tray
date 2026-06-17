@@ -11,11 +11,22 @@ uses [Semantic Versioning](https://semver.org/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| [1.17.2-ddc.4](#1172-ddc4---2026-06-18) | 2026-06-18 | More icons, control-type-neutral labels, drag-reorder the feature list, full code-reference table |
 | [1.17.2-ddc.3](#1172-ddc3---2026-06-18) | 2026-06-18 | Auto-classification, read-only/info type, rename, drag-reorder, stepped slider, defaults/reset |
 | [1.17.2-ddc.2](#1172-ddc2---2026-06-17) | 2026-06-17 | Export/import config, research docs |
 | [1.17.2-ddc.1](#1172-ddc1---2026-06-17) | 2026-06-17 | Custom control types, discovery + scan tools |
 
 ---
+
+## [1.17.2-ddc.4] - 2026-06-18
+
+### Added
+- More icons in the icon picker; renamed "Slider Indicator Type" / "Slider Icon" to
+  control-type-neutral labels ("Indicator type" / "Icon" / "Label text").
+- **Drag-to-reorder the feature list** (handle on each feature) — the brightness panel
+  renders custom features in your chosen order.
+- `VCP-RESEARCH.md`: a standard MCCS quick-reference table and an actionable **LG MQ780
+  recommended profile** (per-code meaning + suggested control type).
 
 ## [1.17.2-ddc.3] - 2026-06-18
 Commit `67e6e78` (+ docs/drag-reorder follow-up).

@@ -12,6 +12,8 @@ const deleteIcon = (<span className="icon" dangerouslySetInnerHTML={{ __html: "&
 export default function MonitorFeatures(props) {
     const { monitor, name, monitorFeatures, T, onChange } = props
 
+    const dragIndexRef = useRef(null)
+
     let extraHTML = []
 
     // Render a feature title with its VCP code shown grayed for identification.
@@ -134,24 +136,58 @@ export default function MonitorFeatures(props) {
             window.sendSettings({ monitorFeatures: window.settings?.monitorFeatures, monitorFeaturesSettings: window.settings?.monitorFeaturesSettings })
         }
 
-        // Custom Features
-        for (const vcp in monitorFeatures) {
-            if (ignoreCodes.indexOf(vcp) === -1 && monitorFeatures[vcp] !== undefined) {
-                const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
-                const enabled = monitorFeatures?.[vcp];
-                const name = (settings?.name?.length ? settings.name : (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature"))
-                const icon = (settings?.iconType === "windows" && settings?.icon ? settings.icon : "E9E9")
-                extraHTML.push(
-                    <SettingsOption className="monitor-feature-item" key={vcp} icon={icon} title={titleWithCode(name, vcp)} expandable={true} input={
-                        <div className="input-row"><div style={{ cursor: "pointer" }} onClick={() => deleteFeature(vcp)}>{deleteIcon}</div><div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div></div>
+        const featSettingsOf = (v) => window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[v]
+
+        // Persist a new display order for the custom features after a drag.
+        const reorderFeatures = (orderedVcps) => {
+            const hwidKey = monitor.hwid[1]
+            if (!window.settings.monitorFeaturesSettings[hwidKey]) window.settings.monitorFeaturesSettings[hwidKey] = {}
+            orderedVcps.forEach((v, idx) => {
+                if (!window.settings.monitorFeaturesSettings[hwidKey][v]) window.settings.monitorFeaturesSettings[hwidKey][v] = {}
+                window.settings.monitorFeaturesSettings[hwidKey][v].order = idx
+            })
+            if (onChange) onChange()
+        }
+
+        // Custom Features (drag the handle to reorder; native DnD so it doesn't
+        // nest the react-beautiful-dnd context used by each feature's value list)
+        const customVcps = Object.keys(monitorFeatures)
+            .filter(vcp => ignoreCodes.indexOf(vcp) === -1 && monitorFeatures[vcp] !== undefined)
+            .sort((a, b) => ((featSettingsOf(a)?.order ?? 9999) - (featSettingsOf(b)?.order ?? 9999)))
+
+        customVcps.forEach((vcp, i) => {
+            const settings = featSettingsOf(vcp)
+            const enabled = monitorFeatures?.[vcp];
+            const name = (settings?.name?.length ? settings.name : (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature"))
+            const icon = (settings?.iconType === "windows" && settings?.icon ? settings.icon : "E9E9")
+            extraHTML.push(
+                <div className="monitor-feature-drag" key={vcp}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                        e.preventDefault()
+                        const from = dragIndexRef.current
+                        if (from !== null && from !== i) {
+                            const list = [...customVcps]
+                            const [moved] = list.splice(from, 1)
+                            list.splice(i, 0, moved)
+                            reorderFeatures(list)
+                        }
+                        dragIndexRef.current = null
+                    }}>
+                    <SettingsOption className="monitor-feature-item" icon={icon} title={titleWithCode(name, vcp)} expandable={true} input={
+                        <div className="input-row">
+                            <div className="feature-drag-handle" draggable={true} onDragStart={() => { dragIndexRef.current = i }} onDragEnd={() => { dragIndexRef.current = null }} title={T.t("SETTINGS_FEATURES_REORDER")} dangerouslySetInnerHTML={{ __html: "&#xE76F;" }}></div>
+                            <div style={{ cursor: "pointer" }} onClick={() => deleteFeature(vcp)}>{deleteIcon}</div>
+                            <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
+                        </div>
                     }>
                         <SettingsChild>
                             <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
                         </SettingsChild>
                     </SettingsOption>
-                )
-            }
-        }
+                </div>
+            )
+        })
 
         // VCP code list
         if (monitor.vcpCodes && typeof monitor.vcpCodes === 'object' && Object.values(monitor.vcpCodes).length) {
@@ -764,7 +800,32 @@ const windowsIcons = [
     "e713",
     "eb9f",
     "ed39",
-    "ed3a"
+    "ed3a",
+    "e700",
+    "e70f",
+    "e71b",
+    "e72c",
+    "e73e",
+    "e74e",
+    "e765",
+    "e768",
+    "e769",
+    "e786",
+    "e7ec",
+    "e7f0",
+    "e890",
+    "e8b8",
+    "e8c8",
+    "e946",
+    "e9d9",
+    "ea18",
+    "eb51",
+    "ec4a",
+    "e9a9",
+    "e950",
+    "e7c1",
+    "f5a9",
+    "eca5"
 ]
 
 function WindowsIconsOptions(props) {

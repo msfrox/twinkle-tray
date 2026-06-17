@@ -54,7 +54,14 @@ export default function DDCCISliders(props) {
 
     if (monitor?.features) {
         let i = 0
-        for (const vcp in monitor.features) {
+        const builtinKeys = ["0x10", "0x12", "0x13", "0x60", "0x62", "0xD6"]
+        const allKeys = Object.keys(monitor.features)
+        // Built-ins keep their natural position; custom features follow the saved order.
+        const orderedKeys = [
+            ...allKeys.filter(k => builtinKeys.includes(k)),
+            ...allKeys.filter(k => !builtinKeys.includes(k)).sort((a, b) => ((featureSettings?.[a]?.order ?? 9999) - (featureSettings?.[b]?.order ?? 9999)))
+        ]
+        for (const vcp of orderedKeys) {
             i++
 
             if (vcp == "0x10" || vcp == "0x13" || vcp == "0xD6") {
