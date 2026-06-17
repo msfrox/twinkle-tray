@@ -28,6 +28,10 @@ uses [Semantic Versioning](https://semver.org/).
 - `VCP-RESEARCH.md`: a standard MCCS quick-reference table and an actionable **LG MQ780
   recommended profile** (per-code meaning + suggested control type).
 
+### Fixed
+- Custom slider features persist explicit bounds (0–100) on setup, so the panel no longer falls
+  back to the monitor's reported max (a garbage 255 on some vendor codes like `0xF9`).
+
 ## [1.17.2-ddc.3] - 2026-06-18
 Commit `67e6e78` (+ docs/drag-reorder follow-up).
 

@@ -178,7 +178,7 @@ export default function DDCCISliders(props) {
                     } else {
                         // Slider — raw min/max/step, sends the raw value directly
                         const sMin = (settings.sliderMin ?? 0)
-                        const sMax = (settings.sliderMax ?? featureMax)
+                        const sMax = (settings.sliderMax ?? 100)
                         const sStep = (settings.step ?? 1)
                         extraHTML.push(
                             <div className="feature-row feature-volume" key={monitor.key + "_" + vcp}>

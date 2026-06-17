@@ -298,10 +298,16 @@ function MonitorFeaturesSettings(props) {
     // auto-detected default + values so the brightness panel renders the right
     // control instead of a slider.
     useEffect(() => {
-        if (!isBuiltIn && !settings?.controlType && (meta || detectedValues.length)) {
+        if (!isBuiltIn && !settings?.controlType) {
             const updates = { controlType: defaultControlType }
             if (discreteControlTypes.indexOf(defaultControlType) !== -1) {
                 updates.values = makeValueList(vcp, detectedValues)
+            } else if (defaultControlType === "slider") {
+                // Persist explicit slider bounds so the panel never falls back to the
+                // monitor's reported max (often a garbage 255 for vendor codes).
+                updates.sliderMin = 0
+                updates.sliderMax = 100
+                updates.step = 1
             }
             persist(updates)
         }

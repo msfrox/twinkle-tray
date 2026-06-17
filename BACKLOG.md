@@ -36,6 +36,10 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
       Display Technology Type `0xB6`, Sub-pixel layout `0xB2`, usage time `0xC6`, firmware
       `0xC9`, frequencies `0xAC`/`0xAE`). Add a "display only" control type that just shows
       the value — not a slider/switch/button.
+- [ ] **Per-code value scale / transform** — some codes need a read/write transform. e.g. LG
+      Black Stabilizer `0xF9` *accepts writes* 0–20 but *reports* values ×5 (0–100). Add an
+      optional scale (display↔raw multiplier/divisor) so the slider shows the right range and
+      reads/writes line up. (Slider `step` already covers the "increments of 5" display case.)
 
 ## Upstream PR notes (when we submit)
 Our work directly matches existing community demand and the maintainer's stated intent —
@@ -116,6 +120,18 @@ reference these in the PR:
   (Windows still sees it), whereas a full power-off (`0xD6=5`) can truly disconnect it. For
   testing, prefer backlight-off semantics where possible, and/or pin the training UI so a
   transient disconnect doesn't wipe the in-progress config.
+
+**Agreed design (active vs disconnected groups):**
+- The DDC/CI Features page shows **two groups**: *Active monitors* and *Disconnected monitors*.
+  A plugged-in display sits in Active; when it disconnects (power-off/reset, unplug) it moves to
+  Disconnected instead of vanishing — its settings stay fully editable (rename, add/label values,
+  reorder, etc.).
+- Each monitor is **collapsible** to save space.
+- On **reconnect**, behaviour follows the "Check current values" setting: either pull the live
+  state from the monitor, or push the saved state to it.
+- Pressing power-off / a button from settings **keeps the settings page open** (don't refresh it
+  away just because a monitor dropped).
+- The **dashboard (#12) mirrors** this same active/disconnected grouping + collapsible layout.
 
 ### Brightness/contrast presets (from twinkle-tray-plus)
 - Named brightness+contrast snapshots with Save/Load slots, a "Dark" (zero-all) action, and
