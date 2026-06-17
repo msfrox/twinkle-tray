@@ -240,6 +240,14 @@ window.addEventListener("set-sdr-brightness", e => {
     ipc.send("set-sdr-brightness", { monitor, value })
 })
 
+// Scan current VCP values (for the "scan & compare" discovery tool)
+function scanVCP(monitor, codes) {
+    ipc.send("scan-vcp", { monitor, codes })
+}
+ipc.on("vcp-scan-result", (event, data) => {
+    window.dispatchEvent(new CustomEvent("vcp-scan-result", { detail: data }))
+})
+
 const SunCalc = require('suncalc')
 function getSunCalcTimes(lat, long) {
     const localTimes = SunCalc.getTimes(new Date(), lat, long)
@@ -251,6 +259,7 @@ function getSunCalcTimes(lat, long) {
 }
 
 window.ipc = ipc
+window.scanVCP = scanVCP
 window.updateBrightness = updateBrightness
 window.requestMonitors = requestMonitors
 window.sendSettings = sendSettings

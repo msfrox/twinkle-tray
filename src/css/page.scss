@@ -615,6 +615,105 @@ select {
 .feature-toggle-settings {
     padding: 0;
 }
+.feature-value-editor {
+    .description {
+        opacity: 0.7;
+        font-size: 12px;
+        margin: 0 0 10px;
+    }
+    .feature-value-row {
+        align-items: flex-end;
+        margin-top: 8px;
+    }
+    .feature-value-delete {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        cursor: pointer;
+        opacity: 0.7;
+        &:hover { opacity: 1; }
+    }
+}
+.vcp-add-button {
+    padding: 4px 10px !important;
+    margin-left: 10px;
+    font-size: 12px;
+    line-height: 1.2 !important;
+}
+.feature-discovery {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(127, 127, 127, 0.2);
+
+    .description {
+        opacity: 0.7;
+        font-size: 12px;
+        margin: 0 0 10px;
+    }
+}
+.feature-discovery-stepper {
+    align-items: center;
+
+    .button {
+        padding: 0 16px !important;
+        height: 40px;
+        font-size: 18px;
+        line-height: 1 !important;
+        cursor: pointer;
+    }
+
+    .feature-discovery-status {
+        margin-left: 12px;
+        opacity: 0.8;
+        font-size: 12px;
+    }
+}
+.vcp-code-tag {
+    opacity: 0.4;
+    font-weight: 400;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+.vcp-scanner {
+    margin-bottom: 16px;
+
+    .description {
+        opacity: 0.7;
+        font-size: 12px;
+        margin: 0 0 10px;
+    }
+}
+.vcp-scan-results {
+    margin-top: 12px;
+    font-size: 13px;
+}
+.vcp-scan-changed {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(96, 205, 255, 0.12);
+
+    .vcp-scan-changed-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+        opacity: 0.9;
+    }
+}
+.vcp-scan-all {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 4px 16px;
+    opacity: 0.85;
+}
+.vcp-scan-row {
+    padding: 2px 0;
+
+    &.changed {
+        color: var(--button-primary-background, #60cdff);
+        opacity: 1;
+        font-weight: 500;
+    }
+}
 .feature-toggle-label {
     padding-left: 15px;
     flex: 1;

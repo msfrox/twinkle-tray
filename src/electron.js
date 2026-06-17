@@ -2480,6 +2480,25 @@ ipcMain.on('set-sdr-brightness', (e, values) => {
   setRecentlyInteracted(true)
   updateBrightnessThrottle(values.monitor, values.value, false, true, "sdr")
 })
+// Read the current value of a list of VCP codes for a monitor and return them.
+// Used by the DDC/CI Features "scan & compare" tool to reverse-engineer codes.
+ipcMain.on('scan-vcp', async (e, data) => {
+  const result = {}
+  try {
+    if (data?.monitor && Array.isArray(data.codes)) {
+      for (const code of data.codes) {
+        try {
+          result[code] = await getVCP(data.monitor, parseInt(code))
+        } catch (err) {
+          result[code] = -1
+        }
+      }
+    }
+  } catch (err) {
+    console.log("scan-vcp failed", err)
+  }
+  try { e.sender.send('vcp-scan-result', { monitor: data?.monitor, values: result }) } catch (err) { }
+})
 
 ipcMain.on('get-window-history', () => sendToAllWindows('window-history', windowHistory))
 

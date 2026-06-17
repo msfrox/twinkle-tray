@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useObject } from "../hooks/useObject"
 import { SettingsOption, SettingsChild } from "./SettingsOption";
 import Slider from "./Slider"
@@ -11,6 +11,9 @@ export default function MonitorFeatures(props) {
     const { monitor, name, monitorFeatures, T, onChange } = props
 
     let extraHTML = []
+
+    // Render a feature title with its VCP code shown grayed for identification.
+    const titleWithCode = (label, code) => (<>{label} <span className="vcp-code-tag">{code}</span></>)
 
     const inputsData = {
         1: "VGA-1",
@@ -40,7 +43,7 @@ export default function MonitorFeatures(props) {
             const currentBrightnessVCP = window.settings?.userDDCBrightnessVCPs?.[monitor?.hwid?.[1]] || ""
             
             extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key="brightness" icon="e706" title={T.t("PANEL_LABEL_BRIGHTNESS")} expandable={true}>
+                <SettingsOption className="monitor-feature-item" key="brightness" icon="e706" title={titleWithCode(T.t("PANEL_LABEL_BRIGHTNESS"), "0x10")} expandable={true}>
                     <SettingsChild>
                         <BrightnessFeatureSettings hwid={monitor?.hwid?.[1]} currentBrightnessVCP={currentBrightnessVCP} T={T} />
                     </SettingsChild>
@@ -54,11 +57,11 @@ export default function MonitorFeatures(props) {
             const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
             const enabled = monitorFeatures?.["0x12"];
             extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E793" title={T.t("PANEL_LABEL_CONTRAST")} expandable={true} input={
+                <SettingsOption className="monitor-feature-item" key={vcp} icon="E793" title={titleWithCode(T.t("PANEL_LABEL_CONTRAST"), "0x12")} expandable={true} input={
                     <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
                 }>
                     <SettingsChild>
-                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} T={T} vcp={vcp} />
+                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
                     </SettingsChild>
                 </SettingsOption>
             )
@@ -70,11 +73,11 @@ export default function MonitorFeatures(props) {
             const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
             const enabled = monitorFeatures?.["0x62"];
             extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E767" title={T.t("PANEL_LABEL_VOLUME")} expandable={true} input={
+                <SettingsOption className="monitor-feature-item" key={vcp} icon="E767" title={titleWithCode(T.t("PANEL_LABEL_VOLUME"), "0x62")} expandable={true} input={
                     <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
                 }>
                     <SettingsChild>
-                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} T={T} vcp={vcp} />
+                        <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
                     </SettingsChild>
                 </SettingsOption>
             )
@@ -86,7 +89,7 @@ export default function MonitorFeatures(props) {
             const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
             const enabled = monitorFeatures?.["0x60"];
             extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="e839" title={`${T.t("PANEL_LABEL_INPUTS")} ⚠️`} expandable={true} input={
+                <SettingsOption className="monitor-feature-item" key={vcp} icon="e839" title={<>{titleWithCode(T.t("PANEL_LABEL_INPUTS"), "0x60")} ⚠️</>} expandable={true} input={
                     <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
                 }>
                     <SettingsChild description={
@@ -111,7 +114,7 @@ export default function MonitorFeatures(props) {
             const vcp = "0xD6"
             const enabled = monitorFeatures?.["0xD6"];
             extraHTML.push(
-                <SettingsOption className="monitor-feature-item" key={vcp} icon="E7E8" title={`${T.t("PANEL_LABEL_OFF_ON")} ⚠️`} expandable={true} input={
+                <SettingsOption className="monitor-feature-item" key={vcp} icon="E7E8" title={<>{titleWithCode(T.t("PANEL_LABEL_OFF_ON"), "0xD6")} ⚠️</>} expandable={true} input={
                     <div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div>
                 }>
                     <SettingsChild description={`⚠️ ${T.t("GENERIC_DDC_WARNING")}`} />
@@ -134,14 +137,14 @@ export default function MonitorFeatures(props) {
             if (ignoreCodes.indexOf(vcp) === -1 && monitorFeatures[vcp] !== undefined) {
                 const settings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]?.[vcp]
                 const enabled = monitorFeatures?.[vcp];
-                const name = (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature")
+                const name = (settings?.name?.length ? settings.name : (settings?.iconType === "text" && settings?.iconText?.length ? settings.iconText : "Custom Feature"))
                 const icon = (settings?.iconType === "windows" && settings?.icon ? settings.icon : "E9E9")
                 extraHTML.push(
-                    <SettingsOption className="monitor-feature-item" key={vcp} icon={icon} title={`${name} (${vcp})`} expandable={true} input={
+                    <SettingsOption className="monitor-feature-item" key={vcp} icon={icon} title={titleWithCode(name, vcp)} expandable={true} input={
                         <div className="input-row"><div style={{ cursor: "pointer" }} onClick={() => deleteFeature(vcp)}>{deleteIcon}</div><div className="inputToggle-generic"><input onChange={() => { props?.toggleFeature(monitor.hwid[1], vcp) }} checked={(enabled ? true : false)} data-checked={(enabled ? true : false)} type="checkbox" /></div></div>
                     }>
                         <SettingsChild>
-                            <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} T={T} vcp={vcp} />
+                            <MonitorFeaturesSettings onChange={onChange} key={vcp + "_settings"} enabled={enabled} settings={settings} hwid={monitor?.hwid?.[1]} monitorId={monitor.id} T={T} vcp={vcp} vcpInfo={getDetectedValues(monitor.vcpCodes, vcp)} />
                         </SettingsChild>
                     </SettingsOption>
                 )
@@ -152,8 +155,15 @@ export default function MonitorFeatures(props) {
         if (monitor.vcpCodes && typeof monitor.vcpCodes === 'object' && Object.values(monitor.vcpCodes).length) {
             const list = []
             for (const code in monitor.vcpCodes) {
+                const vcpKey = "0x" + (parseInt(code) || 0).toString(16).toUpperCase()
+                const alreadyAdded = (monitorFeatures?.[vcpKey] !== undefined) || ignoreCodes.indexOf(vcpKey) !== -1
                 list.push(
                     <div className="vcp-code" key={code}><b>{code}</b>: {findVCPCodeName(code) || "???"}
+                        {
+                            !alreadyAdded
+                                ? <a className="button vcp-add-button" onClick={() => props?.toggleFeature(monitor.hwid[1], vcpKey)}> + {T.t("SETTINGS_FEATURES_ADD_FROM_LIST")}</a>
+                                : null
+                        }
                         {
                             monitor.vcpCodes[code].length
                                 ? <div className="supported-values">{T.t("SETTINGS_FEATURES_VCP_EXPECTED")}: {monitor.vcpCodes[code].toString()}</div>
@@ -166,6 +176,7 @@ export default function MonitorFeatures(props) {
                 extraHTML.push(
                     <SettingsOption className="monitor-feature-item" key={"vcp-codes"} description={T.t("SETTINGS_FEATURES_VCP_LIST_TITLE")} expandable={true} forceExpandable={true}>
                         <SettingsChild>
+                            <VcpScanner monitor={monitor} T={T} />
                             <div className="detected-vcp-codes">
                                 <div className="vcp-code">⚠️ {T.t("SETTINGS_FEATURES_VCP_LIST_DESC")}<br /><br /></div>
                                 {list}
@@ -196,34 +207,91 @@ export default function MonitorFeatures(props) {
 }
 
 function MonitorFeaturesSettings(props) {
-    const { enabled, settings, hwid, vcp, onChange, T } = props
+    const { enabled, settings, hwid, vcp, onChange, T, vcpInfo, monitorId } = props
     //if(!enabled) return (<></>);
+
+    const detectedValues = Array.isArray(vcpInfo) ? vcpInfo : []
+    const isBuiltIn = ignoreCodes.indexOf(vcp) !== -1
+    // Discrete codes default to a value-based control; long lists default to a dropdown.
+    const defaultControlType = (!isBuiltIn && detectedValues.length ? (detectedValues.length > 6 ? "dropdown" : "buttons") : "slider")
 
     const [settingsObj, updateSettings] = useObject(Object.assign({
         icon: "e897",
         iconType: "windows",
         iconText: "",
         iconPath: "",
+        controlType: defaultControlType,
+        values: makeValueList(vcp, detectedValues),
         min: 0,
         max: 100,
         maxVisual: 100,
         linked: false
     }, settings))
 
-    const onChangeHandler = (settingName, value) => {
+    // Persist one or more settings at once, then let the parent save to disk.
+    const persist = (updates) => {
         try {
-            updateSettings({ [settingName]: value })
+            updateSettings(updates)
             if (!window.settings.monitorFeaturesSettings[hwid]) {
                 window.settings.monitorFeaturesSettings[hwid] = {}
             }
             if (!window.settings.monitorFeaturesSettings[hwid][vcp]) {
                 window.settings.monitorFeaturesSettings[hwid][vcp] = {}
             }
-            window.settings.monitorFeaturesSettings[hwid][vcp][settingName] = value
-            if (onChange) onChange(settingName, value);
+            Object.assign(window.settings.monitorFeaturesSettings[hwid][vcp], updates)
+            if (onChange) onChange();
         } catch (e) {
             console.log(e)
         }
+    }
+    const onChangeHandler = (settingName, value) => persist({ [settingName]: value })
+
+    // On first view of a discrete code with no saved control type, persist the
+    // auto-detected default + values so the brightness panel renders the right
+    // control instead of a slider.
+    useEffect(() => {
+        if (!isBuiltIn && detectedValues.length && !settings?.controlType) {
+            persist({ controlType: defaultControlType, values: makeValueList(vcp, detectedValues) })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const controlType = settingsObj.controlType || "slider"
+    const valueList = Array.isArray(settingsObj.values) ? settingsObj.values : []
+
+    // Value list helpers (buttons / dropdown / actions)
+    const setValueList = (list) => persist({ values: list })
+    const updateValueAt = (i, key, value) => setValueList(valueList.map((row, idx) => idx === i ? Object.assign({}, row, { [key]: value }) : row))
+    const addValueRow = () => setValueList([...valueList, { value: 0, label: "" }])
+    const removeValueRow = (i) => setValueList(valueList.filter((_, idx) => idx !== i))
+    const detectValueList = () => setValueList(makeValueList(vcp, detectedValues))
+    // Add a value/label pair, or update the label if the value already exists.
+    const upsertValue = (value, label) => {
+        const idx = valueList.findIndex(r => r.value === value)
+        const list = idx >= 0
+            ? valueList.map((r, i) => i === idx ? Object.assign({}, r, { label }) : r)
+            : [...valueList, { value, label }]
+        setValueList(list)
+    }
+
+    // Toggle helpers (always exactly two entries: [off, on])
+    const toggleList = [valueList[0] || { value: detectedValues[0] ?? 0, label: "" }, valueList[1] || { value: detectedValues[1] ?? 1, label: "" }]
+    const setToggleValue = (i, value) => {
+        const list = [toggleList[0], toggleList[1]]
+        list[i] = Object.assign({}, list[i], { value })
+        setValueList(list)
+    }
+
+    const onControlTypeChange = (type) => {
+        const updates = { controlType: type }
+        if (discreteControlTypes.indexOf(type) !== -1 && valueList.length === 0) {
+            updates.values = (detectedValues.length ? makeValueList(vcp, detectedValues) : [{ value: 0, label: "" }])
+        }
+        if (type === "toggle") {
+            const base = updates.values || valueList
+            updates.values = [base[0] || { value: detectedValues[0] ?? 0, label: "" }, base[1] || { value: detectedValues[1] ?? 1, label: "" }]
+        }
+        persist(updates)
     }
 
     const iconType = (
@@ -260,9 +328,23 @@ function MonitorFeaturesSettings(props) {
         </div>
     )
 
-    return (
-        <div className="feature-toggle-settings">
-            {ignoreCodes.indexOf(vcp) === -1 ? iconSettings : null}
+    const controlTypeField = (
+        <div className="input-row">
+            <div className="field">
+                <label>{T.t("SETTINGS_FEATURES_CONTROL_TYPE")}</label>
+                <select value={controlType} onChange={e => onControlTypeChange(e.target.value)}>
+                    <option value="slider">{T.t("SETTINGS_FEATURES_TYPE_SLIDER")}</option>
+                    <option value="buttons">{T.t("SETTINGS_FEATURES_TYPE_BUTTONS")}</option>
+                    <option value="dropdown">{T.t("SETTINGS_FEATURES_TYPE_DROPDOWN")}</option>
+                    <option value="toggle">{T.t("SETTINGS_FEATURES_TYPE_TOGGLE")}</option>
+                    <option value="actions">{T.t("SETTINGS_FEATURES_TYPE_ACTIONS")}</option>
+                </select>
+            </div>
+        </div>
+    )
+
+    const sliderSettings = (
+        <>
             <div className="input-row">
                 <Slider min={0} max={100} name={T.t("GENERIC_MINIMUM")} onChange={value => onChangeHandler("min", value)} level={settingsObj.min} scrolling={false} height={"short"} icon={false} />
                 <Slider min={0} max={100} name={T.t("GENERIC_MAXIMUM")} onChange={value => onChangeHandler("max", value)} level={settingsObj.max} scrolling={false} height={"short"} icon={false} />
@@ -277,6 +359,112 @@ function MonitorFeaturesSettings(props) {
                 <br />
                 <Slider min={0} max={100} name={T.t("SETTINGS_FEATURES_STOP_ON_BRIGHTNESS")} onChange={value => onChangeHandler("maxVisual", value)} level={settingsObj.maxVisual ?? 100} scrolling={false} height={"short"} icon={false} />
             </div>
+        </>
+    )
+
+    const valueEditor = (
+        <div className="feature-value-editor">
+            <p className="description">{T.t("SETTINGS_FEATURES_VALUES_DESC")}</p>
+            {valueList.map((row, i) => (
+                <div className="input-row feature-value-row" key={i}>
+                    <div className="field" style={{ flex: "0 0 90px" }}>
+                        {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE")}</label> : null}
+                        <input type="number" value={row.value} onChange={e => updateValueAt(i, "value", e.target.value === "" ? "" : parseInt(e.target.value))} />
+                    </div>
+                    <div className="field" style={{ flex: 1 }}>
+                        {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE_LABEL")}</label> : null}
+                        <input type="text" value={row.label} placeholder={defaultValueLabel(vcp, row.value)} onChange={e => updateValueAt(i, "label", e.target.value)} />
+                    </div>
+                    <div className="feature-value-delete" style={{ cursor: "pointer" }} onClick={() => removeValueRow(i)}>{deleteIcon}</div>
+                </div>
+            ))}
+            <div className="input-row">
+                <a className="button" onClick={addValueRow}>+ {T.t("SETTINGS_FEATURES_ADD_VALUE")}</a>
+                {detectedValues.length ? <a className="button" onClick={detectValueList}>{T.t("SETTINGS_FEATURES_DETECT_VALUES")}</a> : null}
+            </div>
+        </div>
+    )
+
+    const toggleEditor = (
+        <div className="feature-value-editor">
+            <p className="description">{T.t("SETTINGS_FEATURES_VALUES_DESC")}</p>
+            <div className="input-row">
+                <div className="field">
+                    <label>{T.t("SETTINGS_FEATURES_TOGGLE_OFF")}</label>
+                    <input type="number" value={toggleList[0].value} onChange={e => setToggleValue(0, e.target.value === "" ? "" : parseInt(e.target.value))} />
+                </div>
+                <div className="field">
+                    <label>{T.t("SETTINGS_FEATURES_TOGGLE_ON")}</label>
+                    <input type="number" value={toggleList[1].value} onChange={e => setToggleValue(1, e.target.value === "" ? "" : parseInt(e.target.value))} />
+                </div>
+            </div>
+        </div>
+    )
+
+    return (
+        <div className="feature-toggle-settings">
+            {!isBuiltIn ? iconSettings : null}
+            {!isBuiltIn ? controlTypeField : null}
+            {controlType === "slider" ? sliderSettings : null}
+            {(controlType === "buttons" || controlType === "dropdown" || controlType === "actions") ? valueEditor : null}
+            {controlType === "toggle" ? toggleEditor : null}
+            {!isBuiltIn ? <DiscoveryTool vcp={vcp} monitorId={monitorId} valueList={valueList} onSave={upsertValue} T={T} /> : null}
+        </div>
+    )
+}
+
+/**
+ * Discovery / training tool: step a raw VCP value (0-255) one at a time, writing
+ * it to the monitor live, and name values as they're identified. Useful for
+ * mapping undocumented vendor codes whose capability list is incomplete.
+ */
+function DiscoveryTool(props) {
+    const { vcp, monitorId, valueList, onSave, T } = props
+    const [open, setOpen] = useState(false)
+    const [testValue, setTestValue] = useState(0)
+    const [label, setLabel] = useState("")
+
+    const apply = (v) => {
+        let nv = parseInt(v)
+        if (isNaN(nv)) nv = 0
+        nv = Math.max(0, Math.min(255, nv))
+        setTestValue(nv)
+        if (monitorId !== undefined && monitorId !== null) {
+            window.dispatchEvent(new CustomEvent("setVCP", { detail: { monitor: monitorId, code: parseInt(vcp), value: nv } }))
+        }
+    }
+
+    const saveAndNext = () => {
+        onSave(testValue, (label && label.length ? label : String(testValue)))
+        setLabel("")
+        apply(testValue + 1)
+    }
+
+    if (!open) {
+        return (
+            <div className="input-row">
+                <a className="button" onClick={() => setOpen(true)}>🔬 {T.t("SETTINGS_FEATURES_DISCOVER")}</a>
+            </div>
+        )
+    }
+
+    const existing = valueList.find(r => r.value === testValue)
+
+    return (
+        <div className="feature-discovery">
+            <p className="description">{T.t("SETTINGS_FEATURES_DISCOVER_DESC")}</p>
+            <div className="input-row feature-discovery-stepper" onWheel={e => { e.preventDefault(); apply(testValue + (e.deltaY < 0 ? 1 : -1)) }}>
+                <div className="button" onClick={() => apply(testValue - 1)}>−</div>
+                <input type="number" min={0} max={255} value={testValue} onChange={e => apply(e.target.value)} style={{ maxWidth: "90px", textAlign: "center" }} />
+                <div className="button" onClick={() => apply(testValue + 1)}>+</div>
+                <span className="feature-discovery-status">{existing ? `${T.t("SETTINGS_FEATURES_DISCOVER_NAMED")}: ${existing.label || existing.value}` : ""}</span>
+            </div>
+            <div className="input-row">
+                <input type="text" value={label} placeholder={T.t("SETTINGS_FEATURES_DISCOVER_LABEL")} onChange={e => setLabel(e.target.value)} onKeyUp={e => { if (e.which === 13) saveAndNext() }} style={{ flex: 1 }} />
+                <a className="button" onClick={saveAndNext}>{T.t("SETTINGS_FEATURES_DISCOVER_SAVENEXT")}</a>
+                <a className="button" onClick={() => apply(testValue + 1)}>{T.t("SETTINGS_FEATURES_DISCOVER_SKIP")}</a>
+            </div>
+            <p className="description">⚠️ {T.t("SETTINGS_FEATURES_DISCOVER_WARN")}</p>
         </div>
     )
 }
@@ -337,6 +525,83 @@ function BrightnessFeatureSettings(props) {
             <p className="description" style={{ marginTop: "8px", opacity: 0.7, fontSize: "12px" }}>
                 {T.t("SETTINGS_FEATURES_BRIGHTNESS_VCP_DESC")}
             </p>
+        </div>
+    )
+}
+
+/**
+ * Scan & compare tool: reads the current value of every VCP code the display
+ * reports. Changing a setting in the monitor's own software and re-scanning
+ * highlights which code/value changed — a fast way to identify what each code does.
+ */
+function VcpScanner(props) {
+    const { monitor, T } = props
+    const [values, setValues] = useState(null)
+    const [changed, setChanged] = useState({})
+    const [scanCount, setScanCount] = useState(0)
+    const [scanning, setScanning] = useState(false)
+    const valuesRef = useRef(null)
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (!e.detail || e.detail.monitor !== monitor.id) return
+            const next = e.detail.values || {}
+            const prev = valuesRef.current
+            const diff = {}
+            if (prev) {
+                for (const k in next) {
+                    if (prev[k] !== undefined && prev[k] !== next[k]) diff[k] = { from: prev[k], to: next[k] }
+                }
+            }
+            valuesRef.current = next
+            setValues(next)
+            setChanged(diff)
+            setScanCount(c => c + 1)
+            setScanning(false)
+        }
+        window.addEventListener("vcp-scan-result", handler)
+        return () => window.removeEventListener("vcp-scan-result", handler)
+    }, [monitor.id])
+
+    const scan = () => {
+        if (!window.scanVCP || scanning) return
+        const codes = Object.keys(monitor.vcpCodes || {}).map(c => parseInt(c)).filter(n => !isNaN(n))
+        setScanning(true)
+        window.scanVCP(monitor.id, codes)
+    }
+
+    const changedKeys = Object.keys(changed)
+    const scanLabel = scanning
+        ? T.t("SETTINGS_FEATURES_SCANNING")
+        : (values ? T.t("SETTINGS_FEATURES_RESCAN") : T.t("SETTINGS_FEATURES_SCAN"))
+
+    return (
+        <div className="vcp-scanner">
+            <p className="description">{T.t("SETTINGS_FEATURES_SCAN_DESC")}</p>
+            <div className="input-row">
+                <a className="button" onClick={scan}>{scanLabel}</a>
+            </div>
+            {values ?
+                <div className="vcp-scan-results">
+                    {changedKeys.length ?
+                        <div className="vcp-scan-changed">
+                            <div className="vcp-scan-changed-title">{T.t("SETTINGS_FEATURES_SCAN_CHANGED")}</div>
+                            {changedKeys.map(k => {
+                                const hex = "0x" + parseInt(k).toString(16).toUpperCase()
+                                return <div key={k} className="vcp-scan-row changed"><b>{hex}</b> {findVCPCodeName(parseInt(k)) || ""}: {changed[k].from} → <b>{changed[k].to}</b></div>
+                            })}
+                        </div>
+                        : (scanCount > 1 ? <div className="description">{T.t("SETTINGS_FEATURES_SCAN_NOCHANGE")}</div> : null)
+                    }
+                    <div className="vcp-scan-all">
+                        {Object.keys(values).map(k => {
+                            const hex = "0x" + parseInt(k).toString(16).toUpperCase()
+                            const isChanged = changed[k] !== undefined
+                            return <div key={k} className={"vcp-scan-row" + (isChanged ? " changed" : "")}><b>{hex}</b> {findVCPCodeName(parseInt(k)) || "???"}: <b>{values[k]}</b></div>
+                        })}
+                    </div>
+                </div>
+                : null}
         </div>
     )
 }
@@ -409,4 +674,46 @@ function findVCPCodeName(code) {
         }
     }
     return false
+}
+
+// Control types that use a list of discrete values (rather than a slider).
+const discreteControlTypes = ["buttons", "dropdown", "toggle", "actions"]
+
+// Default value labels for well-known VCP codes, used as placeholders/initial labels.
+const knownValueLabels = {
+    "0x60": { 1: "VGA-1", 2: "VGA-2", 3: "DVI-1", 4: "DVI-2", 5: "Composite video 1", 6: "Composite video 2", 7: "S-Video-1", 8: "S-Video-2", 9: "Tuner-1", 10: "Tuner-2", 11: "Tuner-3", 12: "Component video 1", 13: "Component video 2", 14: "Component video 3", 15: "DisplayPort-1", 16: "DisplayPort-2", 17: "HDMI-1", 18: "HDMI-2" }
+}
+
+/**
+ * Find the discrete "expected values" a display reported for a VCP code in its
+ * capabilities string. Capability keys may be padded/cased differently than the
+ * internal "0x.." keys, so a few variants are tried. Returns [] when the code is
+ * continuous or unknown.
+ */
+function getDetectedValues(vcpCodes, vcp) {
+    if (!vcpCodes || typeof vcpCodes !== "object") return []
+    const num = parseInt(vcp)
+    if (isNaN(num)) return []
+    const hex = num.toString(16)
+    const candidates = [
+        vcp,
+        `0x${hex.toUpperCase()}`,
+        `0x${hex.toUpperCase().padStart(2, "0")}`,
+        `0x${hex.toLowerCase()}`,
+        `0x${hex.toLowerCase().padStart(2, "0")}`
+    ]
+    for (const key of candidates) {
+        if (Array.isArray(vcpCodes[key]) && vcpCodes[key].length) return vcpCodes[key]
+    }
+    return []
+}
+
+function defaultValueLabel(vcp, value) {
+    const key = `0x${(parseInt(vcp) || 0).toString(16).toUpperCase()}`
+    if (knownValueLabels[key] && knownValueLabels[key][value] !== undefined) return knownValueLabels[key][value]
+    return (value === "" || value === undefined || value === null ? "" : String(value))
+}
+
+function makeValueList(vcp, detected) {
+    return (Array.isArray(detected) ? detected : []).map(v => ({ value: v, label: defaultValueLabel(vcp, v) }))
 }

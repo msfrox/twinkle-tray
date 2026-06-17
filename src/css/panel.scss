@@ -416,6 +416,149 @@ body[data-is-win11="false"] #root {
     height: 60px;
 }
 
+// Custom feature: buttons / action buttons. Auto height so many values wrap
+// cleanly instead of overflowing into adjacent rows.
+.feature-buttons-row {
+    height: auto;
+    align-items: flex-start;
+    padding-bottom: 12px;
+
+    .feature-icon {
+        height: 30px;
+        align-items: center;
+    }
+}
+.feature-buttons {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .button {
+        padding: 6px 10px;
+        font-size: 12px;
+        line-height: 1.1;
+    }
+}
+
+// Custom feature: dropdown control (custom, not a native <select>, so opening it
+// doesn't blur and auto-hide the panel; also keeps text readable in dark mode).
+.feature-dropdown-row {
+    height: auto;
+    align-items: flex-start;
+
+    .feature-icon {
+        height: 30px;
+        align-items: center;
+    }
+}
+.feature-dropdown {
+    flex: 1;
+    position: relative;
+    max-width: 240px;
+}
+.feature-dropdown-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 30px;
+    padding: 0 10px;
+    color: var(--page-text);
+    background: var(--button-background);
+    border: 1px solid var(--button-border, var(--button-background));
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+
+    .chevron {
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    &:hover {
+        background: var(--button-highlight, var(--button-background));
+    }
+}
+.feature-dropdown-list {
+    margin-top: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--button-background);
+    border: 1px solid var(--button-border, var(--button-background));
+    border-radius: 6px;
+    padding: 4px;
+}
+.feature-dropdown-option {
+    text-align: left;
+    color: var(--page-text);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    padding: 7px 10px;
+    cursor: pointer;
+    font-size: 13px;
+
+    &:hover {
+        background: var(--button-highlight, rgba(127, 127, 127, 0.25));
+    }
+
+    &.selected {
+        background: var(--button-primary-background, #60cdff);
+        color: var(--page-background);
+    }
+}
+
+// Custom feature: toggle (on/off switch)
+.feature-toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+
+    input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .track {
+        position: relative;
+        width: 40px;
+        height: 20px;
+        border-radius: 20px;
+        background: var(--button-background);
+        box-shadow: inset 0 0 0 1px var(--button-border, transparent);
+        transition: background 0.15s ease;
+
+        &:before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--page-text);
+            transition: transform 0.15s ease;
+        }
+    }
+
+    input:checked + .track {
+        background: var(--button-primary-background, #60cdff);
+
+        &:before {
+            transform: translateX(20px);
+            background: var(--page-background);
+        }
+    }
+}
+
 .feature-icon {
     display: flex;
     justify-content: center;
