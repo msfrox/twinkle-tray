@@ -61,6 +61,62 @@ FA(00 01) FD(00 01) FE(00 01 02) FF) mccs_ver(2.1)
 31=RTS, 39=HDR Effect, 46=Gamer 2, 49=Vivid, 50=REC-2020, 52=BT.2100 PQ, 56/57=P3-D65.
 **Cinema** not yet found — use scan-and-compare (set Cinema in LG app → re-scan) to pin it.
 
+## Standard MCCS quick reference (common codes)
+| Code | Feature | Type | Notes |
+|------|---------|------|-------|
+| 0x10 | Luminance (brightness) | continuous | main backlight |
+| 0x12 | Contrast | continuous | |
+| 0x14 | Select colour preset | discrete | colour temperature (5000K/6500K/9300K/sRGB/user…) |
+| 0x16 / 0x18 / 0x1A | Video gain R / G / B | continuous | RGB white balance |
+| 0x6C / 0x6E / 0x70 | Video black level R / G / B | continuous | |
+| 0x60 | Input source | discrete | 0F=DP1,10=DP2,11=HDMI1,12=HDMI2 (etc.) |
+| 0x62 | Speaker volume | continuous | |
+| 0x8D | Audio mute | discrete | 1=mute, 2=unmute |
+| 0x72 | Gamma | continuous | |
+| 0x87 | Sharpness | continuous | |
+| 0x8A | Colour saturation | continuous | |
+| 0x90 | Hue | continuous | |
+| 0xAA | Screen orientation | discrete | 1=0°,2=90°,3=180°,4=270° |
+| 0xCC | OSD language | discrete | |
+| 0xD6 | Power mode | discrete | 1=on, 4=standby, 5=off |
+| 0x04 / 0x05 / 0x06 / 0x08 | Restore factory (all / lum+contrast / geometry / colour) | write-only action | momentary |
+| 0x01 | Degauss | write-only action | CRT only |
+| 0xAC / 0xAE | Horizontal / vertical frequency | read-only info | |
+| 0xB2 | Flat-panel sub-pixel layout | read-only info | |
+| 0xB6 | Display technology type | read-only info | |
+| 0xC0 | Display usage time | read-only info | hours powered |
+| 0xC6 / 0xC8 | Application enable key / controller ID | read-only info | |
+| 0xC9 | Display firmware level | read-only info | |
+| 0xDF | VCP (MCCS) version | read-only info | |
+| 0xE0–0xFF | Manufacturer-specific | varies | undocumented — discover by testing |
+
+## LG MQ780 — recommended profile to set up now
+Add each via **DDC/CI Features → + Add** (or the code list), pick the control type, label the values.
+✓ confirmed · 🔶 likely (from LG 27UD58 / your testing) · ❓ unknown (use Discover/Scan).
+
+| Code | What it is | Suggested control | Values / labels | Conf. |
+|------|-----------|-------------------|-----------------|-------|
+| 0x10 | Brightness | Slider *(built-in)* | 0–100 | ✓ |
+| 0x12 | Contrast | Slider *(built-in)* | 0–100 | ✓ |
+| 0x62 | Volume | Slider *(built-in)* | 0–100 | ✓ |
+| 0x60 | Input | Buttons *(built-in)* | DP-1/DP-2/HDMI-1/HDMI-2 | ✓ |
+| 0xD6 | Power | Buttons *(built-in)* | 1=On, 4=Off | ✓ |
+| 0x15 | Picture / Colour-space mode | **Dropdown** | your map: Reader/Color-Weakness/sRGB/EBU/REC709/SMPTE-C/DCI-P3/FPS/RTS/HDR-Effect/Vivid/Gamer2/REC-2020/BT.2100-PQ/P3-D65/Cinema | ✓ mapped |
+| 0xF9 | Black Stabilizer | **Slider, step 5** | 0–100 | ✓ |
+| 0xF7 | Response Time | **Buttons** | 0=Off,1,2,3 (Fast/Faster/…) | 🔶 high |
+| 0xF6 | Smart Energy Saving | **Buttons** | 0=Off,1=Low,2=High | 🔶 high |
+| 0x14 | Colour temperature | Buttons | 5,8,11 → Warm/Medium/Cool (verify) | 🔶 |
+| 0x16/0x18/0x1A | RGB gain (R/G/B) | Sliders ×3 *(group later)* | 0–100 each | ✓ |
+| 0x8D | Audio mute | Toggle | 1=Mute, 2=Unmute | 🔶 |
+| 0xF8 | FreeSync / Adaptive-Sync | Toggle | 0=Off, 1=On | 🔶 |
+| 0xFE | Gamma | Buttons | 0,1,2 (Gamma modes) | 🔶 |
+| 0xF5 | Aspect Ratio (likely) | Buttons | 1–4 (Wide/Original/…) | 🔶 |
+| 0xF4 | unknown continuous (Sharpness/Super-Res?) | Slider | 0–? | ❓ |
+| 0xFA / 0xFD | unknown on/off (DAS? HDR? crosshair?) | Toggle | 0/1 | ❓ |
+| 0x4D/0x4E/0x4F · 0xEF · 0xFF | unknown vendor | Discover | — | ❓ |
+| 0x04 / 0x05 / 0x08 | Restore defaults (factory / lum+contrast / colour) | Action buttons | momentary | ✓ |
+| 0x02 · 0x52 · 0xAC · 0xAE · 0xB2 · 0xB6 · 0xC0 · 0xC6 · 0xC8 · 0xC9 · 0xDF | Status / info | **Info (read-only)** | — | ✓ |
+
 ## Other brands & the community DB schema
 - **ddccontrol-db** keys each monitor by **Plug-and-Play ID** (3–4 char vendor + 4-char hex
   product, e.g. `GSM5B55` = an LG, `DEL4063` = a Dell). Each profile is XML with controls
