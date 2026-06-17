@@ -9,37 +9,50 @@ whole thing useful for **all** monitors/laptops, not just the LG MQ780 we're tes
 
 ---
 
-## ✅ Done (this branch)
-- Per-feature **control types**: slider, buttons, dropdown, toggle, action buttons.
-- Auto-detect discrete values from the display's capability report; persist the
-  detected default so the panel renders the right control (long lists → dropdown).
-- Custom dropdown in the panel (no native `<select>`, so it can't blur/close the panel).
-- Buttons rows auto-size (no overflow/overlap); panel grows to fit.
-- One-click **+ Add** for any reported VCP code.
-- **Discovery / training tool**: step a raw value 0–255 (wheel/arrows/buttons), write
-  live, name + save found values (auto-advance).
-- **Scan & compare tool**: read all reported codes' current values; change a setting in
-  the monitor's own software, re-scan, and changed values are highlighted.
-- Grayed **`0x..` code tags** on every feature title for identification.
+## ✅ Done (v1.17.2-ddc.1 … ddc.4 + fix — see CHANGELOG.md & VCP-RESEARCH.md)
+- Per-feature **control types**: slider, buttons, dropdown, on/off toggle, action buttons,
+  and a read-only **info** display.
+- **Auto-classification** via an MCCS metadata table (`src/vcp-meta.js`): added codes are
+  typed automatically (info / continuous / discrete / action); unknown vendor codes fall back
+  to capability detection. Detected default is persisted on first view.
+- Custom in-panel **dropdown** (no native `<select>`, so it can't blur/close the panel);
+  auto-sizing **buttons** rows; one-click **+ Add** for any reported code.
+- **Discovery / training tool** (step a raw value 0–255, name values live).
+- **Scan & compare tool** (read all reported codes; highlight what changed; "save current as
+  defaults").
+- **Stepped slider** (raw min/max/step; sends raw values) — fixes the old `val*max/100`
+  scaling, and the panel slider no longer falls back to the monitor's garbage max (255).
+- **Rename** features; **drag-reorder** value lists *and* the feature list; grayed `0x..` tags.
+- **Defaults & reset** (per-feature default + reset-to-default).
+- **Export / import** config (backup + sharing). More icons; control-type-neutral labels.
 
-## ▶ In progress / next
-- [ ] **Export / import settings** (NEXT) — write config (incl. code mappings) to a JSON
-      file and load it back. Backup + sharing. Solves "store training data safe."
-- [ ] **Rename** custom features (dedicated name field).
-- [ ] **Reorder** value lists (move up/down).
-- [ ] **Stepped slider** — slider with a configurable step (e.g. Black Stabilizer `0xF9`
-      moves in multiples of 5). Send raw values (current slider scales by max/100, which
-      mangles raw values — fix as part of this).
-- [ ] **Defaults capture & reset** — capture factory-default values (after a reset, or via
-      a scan) and offer per-feature / global "reset to default."
-- [ ] **Read-only / info control type** — some codes are *information*, not settings (e.g.
-      Display Technology Type `0xB6`, Sub-pixel layout `0xB2`, usage time `0xC6`, firmware
-      `0xC9`, frequencies `0xAC`/`0xAE`). Add a "display only" control type that just shows
-      the value — not a slider/switch/button.
-- [ ] **Per-code value scale / transform** — some codes need a read/write transform. e.g. LG
-      Black Stabilizer `0xF9` *accepts writes* 0–20 but *reports* values ×5 (0–100). Add an
-      optional scale (display↔raw multiplier/divisor) so the slider shows the right range and
-      reads/writes line up. (Slider `step` already covers the "increments of 5" display case.)
+## Architecture decision (2026-06-18): extend, don't rewrite
+The "any trigger controls any feature" future (scroll→volume, time-of-day→picture-mode) does
+**not** need a core rewrite — the **hotkey action system** (`electron.js` ~1180) already drives
+any VCP code (`action.target` = brightness/contrast/volume/powerState/raw code; offset/cycle).
+Reach the vision by **extending other triggers** (scroll, time-of-day, idle, app-profiles) to
+target VCP codes the same way, and by unifying only the *feature* subsystem. **Keep brightness
+(and power) as wired-in primaries** — genericizing their internals is pure risk for ~no gain.
+A full rewrite would risk the whole app, permanently un-merge from upstream, and add indirection
+for no marginal gain.
+
+## ▶ Next (in order)
+- [ ] **#14 — Editable built-ins** *(START HERE)*. Make contrast (`0x12`), volume (`0x62`),
+      input (`0x60`) first-class **editable** features (rename, control type, values, reorder,
+      placement); keep brightness (`0x10`) and power (`0xD6`) special (system-integrated).
+      **Safe dual-path:** in the panel, keep the existing special rendering when no custom
+      `controlType` is saved; switch to the generic renderer once the user customizes. Remove
+      `0x12/0x62/0x60` from `ignoreCodes` so they show the full editor; mark them non-deletable.
+      Input/contrast/volume already auto-classify (meta + capability values + the `0x60` label
+      map in `knownValueLabels`), so seeding is mostly free. Smoke-test brightness/contrast/
+      volume/input before committing.
+- [ ] **#11 — Grouped / multi-control** (RGB etc.; see below).
+- [ ] **#12 + #13 — Active/Disconnected monitor groups + dashboard** (see below; design agreed).
+- [ ] **Per-code value scale / transform** — LG Black Stabilizer `0xF9` writes 0–20 but reports
+      ×5 (0–100). Optional display↔raw multiplier. (`step` already covers the display side.)
+- [ ] **Extend other triggers** (scroll/time-of-day/idle) to target any VCP code (per the
+      architecture decision above) — the path to "any control, any trigger."
+- [ ] **Open the PR upstream** when ready (credit #790, resolve #1241 — see Upstream PR notes).
 
 ## Upstream PR notes (when we submit)
 Our work directly matches existing community demand and the maintainer's stated intent —
