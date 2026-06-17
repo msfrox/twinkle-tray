@@ -9,6 +9,38 @@ Twinkle Tray enables brightness control on external displays in Windows 10 & 11.
 
 <img src="https://raw.githubusercontent.com/xanderfrangos/twinkle-tray/gh-pages/assets/img/tt-screenshot-w11.jpg" alt="Win 10 brightness slider" />
 
+---
+
+## 🛠️ This fork — Custom DDC/CI controls
+
+> This is a fork of [Twinkle Tray](https://github.com/xanderfrangos/twinkle-tray) by
+> [Xander Frangos](https://github.com/xanderfrangos), adding richer control over **any**
+> DDC/CI feature your monitor exposes — not just brightness/contrast. Based on upstream
+> **v1.17.2**. See the **[CHANGELOG](CHANGELOG.md)** for version history, the
+> **[BACKLOG](BACKLOG.md)** for the roadmap, and **[VCP-RESEARCH](VCP-RESEARCH.md)** for the
+> code-mapping notes.
+
+Added on top of upstream (all in **Settings → DDC/CI Features**):
+
+- **Multiple control types per feature** — slider, buttons, dropdown, on/off toggle, action
+  buttons, and a **read-only "info"** display — instead of forcing every code onto a 0–100% slider.
+- **Auto-classification** — added codes are auto-typed using an MCCS metadata table (info /
+  continuous / discrete / action), with capability-based fallback for unknown vendor codes.
+- **Labelled, reorderable values** — name each value (e.g. `0x15` → "sRGB", "Cinema") and
+  drag to reorder; one-click **+ Add** for any code the display reports.
+- **Stepped slider** — raw min/max/step (e.g. Black Stabilizer in multiples of 5), sending
+  raw values rather than scaled percentages.
+- **Discovery / training tool** — step a raw value `0–255` live and name modes as you find them.
+- **Scan & compare** — read every reported code, change a setting in the monitor's own
+  software, and see exactly which code/value changed.
+- **Defaults & reset** — record factory defaults and reset a feature to its default.
+- **Export / import** — back up and share your monitor config (and code mappings) as a file.
+
+These changes aim to complete the intent of upstream [#790](https://github.com/xanderfrangos/twinkle-tray/pull/790)
+and resolve [#1241](https://github.com/xanderfrangos/twinkle-tray/issues/1241).
+
+---
+
 ## Features
 - Adds brightness sliders to the system tray, similar to the built-in Windows volume flyout.
 - Seamlessly blends in with Windows 10 and Windows 11. Uses your Personalization settings to match your taskbar.

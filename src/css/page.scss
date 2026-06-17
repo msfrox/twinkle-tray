@@ -633,22 +633,17 @@ select {
         opacity: 0.7;
         &:hover { opacity: 1; }
     }
-    .feature-value-reorder {
+    .feature-value-handle {
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 2px;
+        align-items: center;
+        height: 40px;
+        padding: 0 6px;
+        cursor: grab;
+        opacity: 0.5;
+        font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
 
-        .reorder-btn {
-            font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
-            font-size: 11px;
-            line-height: 1;
-            cursor: pointer;
-            opacity: 0.6;
-
-            &:hover { opacity: 1; }
-            &[data-disabled="true"] { opacity: 0.15; pointer-events: none; }
-        }
+        &:hover { opacity: 0.9; }
+        &:active { cursor: grabbing; }
     }
 }
 .feature-info-note {

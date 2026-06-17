@@ -4,6 +4,7 @@ import { SettingsOption, SettingsChild } from "./SettingsOption";
 import Slider from "./Slider"
 import VCP from "../vcp-codes"
 import VCPMeta from "../vcp-meta"
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 const ignoreCodes = ["0x10", "0x12", "0x13", "0x62", "0xD6", "0x60"]
 
 const deleteIcon = (<span className="icon" dangerouslySetInnerHTML={{ __html: "&#xE74D;" }}></span>)
@@ -279,11 +280,11 @@ function MonitorFeaturesSettings(props) {
     const updateValueAt = (i, key, value) => setValueList(valueList.map((row, idx) => idx === i ? Object.assign({}, row, { [key]: value }) : row))
     const addValueRow = () => setValueList([...valueList, { value: 0, label: "" }])
     const removeValueRow = (i) => setValueList(valueList.filter((_, idx) => idx !== i))
-    const moveValueRow = (i, dir) => {
-        const j = i + dir
-        if (j < 0 || j >= valueList.length) return
+    const onValueDragEnd = (result) => {
+        if (!result.destination) return
         const list = [...valueList]
-        const tmp = list[i]; list[i] = list[j]; list[j] = tmp
+        const [moved] = list.splice(result.source.index, 1)
+        list.splice(result.destination.index, 0, moved)
         setValueList(list)
     }
     const detectValueList = () => setValueList(makeValueList(vcp, detectedValues))
@@ -407,23 +408,33 @@ function MonitorFeaturesSettings(props) {
     const valueEditor = (
         <div className="feature-value-editor">
             <p className="description">{T.t("SETTINGS_FEATURES_VALUES_DESC")}</p>
-            {valueList.map((row, i) => (
-                <div className="input-row feature-value-row" key={i}>
-                    <div className="feature-value-reorder">
-                        <span className="reorder-btn" data-disabled={i === 0} onClick={() => moveValueRow(i, -1)} dangerouslySetInnerHTML={{ __html: "&#xE70E;" }}></span>
-                        <span className="reorder-btn" data-disabled={i === valueList.length - 1} onClick={() => moveValueRow(i, 1)} dangerouslySetInnerHTML={{ __html: "&#xE70D;" }}></span>
-                    </div>
-                    <div className="field" style={{ flex: "0 0 80px" }}>
-                        {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE")}</label> : null}
-                        <input type="number" value={row.value} onChange={e => updateValueAt(i, "value", e.target.value === "" ? "" : parseInt(e.target.value))} />
-                    </div>
-                    <div className="field" style={{ flex: 1 }}>
-                        {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE_LABEL")}</label> : null}
-                        <input type="text" value={row.label} placeholder={defaultValueLabel(vcp, row.value)} onChange={e => updateValueAt(i, "label", e.target.value)} />
-                    </div>
-                    <div className="feature-value-delete" style={{ cursor: "pointer" }} onClick={() => removeValueRow(i)}>{deleteIcon}</div>
-                </div>
-            ))}
+            <DragDropContext onDragEnd={onValueDragEnd}>
+                <Droppable droppableId={"values-" + vcp}>
+                    {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                            {valueList.map((row, i) => (
+                                <Draggable key={i} draggableId={"val-" + i} index={i}>
+                                    {(dragProvided) => (
+                                        <div className="input-row feature-value-row" ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
+                                            <div className="feature-value-handle" {...dragProvided.dragHandleProps} title={T.t("SETTINGS_FEATURES_REORDER")} dangerouslySetInnerHTML={{ __html: "&#xE76F;" }}></div>
+                                            <div className="field" style={{ flex: "0 0 80px" }}>
+                                                {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE")}</label> : null}
+                                                <input type="number" value={row.value} onChange={e => updateValueAt(i, "value", e.target.value === "" ? "" : parseInt(e.target.value))} />
+                                            </div>
+                                            <div className="field" style={{ flex: 1 }}>
+                                                {i === 0 ? <label>{T.t("SETTINGS_FEATURES_VALUE_LABEL")}</label> : null}
+                                                <input type="text" value={row.label} placeholder={defaultValueLabel(vcp, row.value)} onChange={e => updateValueAt(i, "label", e.target.value)} />
+                                            </div>
+                                            <div className="feature-value-delete" style={{ cursor: "pointer" }} onClick={() => removeValueRow(i)}>{deleteIcon}</div>
+                                        </div>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
             <div className="input-row">
                 <a className="button" onClick={addValueRow}>+ {T.t("SETTINGS_FEATURES_ADD_VALUE")}</a>
                 {detectedValues.length ? <a className="button" onClick={detectValueList}>{T.t("SETTINGS_FEATURES_DETECT_VALUES")}</a> : null}
