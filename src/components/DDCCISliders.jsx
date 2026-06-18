@@ -60,27 +60,87 @@ export default function DDCCISliders(props) {
         setValues({ ["0x60"]: a })
     }
 
+    // Apply a group slider change. When the group is linked ("move all together"),
+    // shift every member by the same delta (clamped to each member's bounds) so the
+    // relative offsets are preserved; otherwise just move the one member.
+    const handleGroupChange = (g, member, val) => {
+        if (g.linked) {
+            const delta = val - (values[member.vcp] ?? 0)
+            const updates = {}
+            ;(g.members || []).forEach(m => {
+                if (!m || !m.vcp) return
+                const code = parseInt(m.vcp)
+                if (isNaN(code)) return
+                const min = (m.min ?? 0), max = (m.max ?? 100)
+                let nv = (values[m.vcp] ?? 0) + delta
+                if (nv < min) nv = min
+                if (nv > max) nv = max
+                updates[m.vcp] = nv
+                setVCP(monitor.id, code, nv)
+            })
+            setValues(updates)
+        } else {
+            const code = parseInt(member.vcp)
+            if (isNaN(code)) return
+            setValues({ [member.vcp]: val })
+            setVCP(monitor.id, code, val)
+        }
+    }
+
+    // Render a feature group as a column of labeled sliders under one icon.
+    const renderGroup = (g) => {
+        const members = (g.members || []).filter(m => m && m.vcp)
+        if (!members.length) return null
+        let icon
+        if (g.iconType === "windows" && g.icon) {
+            icon = (<span className="icon vfix" dangerouslySetInnerHTML={{ __html: `&#x${g.icon};` }}></span>)
+        } else if (g.iconType === "text" && g.iconText) {
+            icon = (<span className="icon icon-text vfix">{g.iconText}</span>)
+        } else {
+            icon = (<span className="icon vfix">&#xE790;</span>)
+        }
+        return (
+            <div className="feature-row feature-group-row" key={monitor.key + "_" + g.id}>
+                <div className="feature-icon">{icon}</div>
+                <div className="feature-group-sliders">
+                    {members.map((m, idx) => (
+                        <div className="feature-group-slider" key={m.vcp + "_" + idx}>
+                            <Slider type="custom" min={(m.min ?? 0)} max={(m.max ?? 100)} step={(m.step ?? 1)} name={m.label || m.vcp} icon={false} height={"short"} monitorID={monitor.id} level={values[m.vcp] ?? 0} monitorName={monitor.name} monitortype={monitor.type} onChange={val => handleGroupChange(g, m, val)} scrollAmount={props.scrollAmount} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
     let extraHTML = []
 
     if (monitor?.features) {
-        let i = 0
         // Brightness/backlight/power are rendered elsewhere; everything else
-        // (contrast/volume/input + custom codes) follows the saved order, with
-        // sensible defaults for the editable built-ins.
+        // (contrast/volume/input + custom codes + groups) follows the saved order,
+        // with sensible defaults for the editable built-ins. Codes that belong to a
+        // group are rendered inside the group, not standalone.
+        const groups = (window.settings?.monitorFeatureGroups?.[monitor?.hwid[1]]) || []
+        const groupedVcps = new Set()
+        groups.forEach(g => (g.members || []).forEach(m => { if (m && m.vcp) groupedVcps.add(m.vcp) }))
+
         const fixedKeys = ["0x10", "0x13", "0xD6"]
         const defaultOrder = { "0x12": 0, "0x62": 1, "0x60": 2 }
         const orderOf = (v) => (featureSettings?.[v]?.order ?? defaultOrder[v] ?? 9999)
         const allKeys = Object.keys(monitor.features)
-        const orderedKeys = [
-            ...allKeys.filter(k => fixedKeys.includes(k)),
-            ...allKeys.filter(k => !fixedKeys.includes(k)).sort((a, b) => orderOf(a) - orderOf(b))
-        ]
-        for (const vcp of orderedKeys) {
-            i++
+        const featureKeys = allKeys.filter(k => !fixedKeys.includes(k) && !groupedVcps.has(k))
+        const renderList = [
+            ...featureKeys.map(vcp => ({ kind: "feature", vcp, order: orderOf(vcp) })),
+            ...groups.filter(g => g.enabled).map(g => ({ kind: "group", group: g, order: (g.order ?? 9999) }))
+        ].sort((a, b) => a.order - b.order)
 
-            if (vcp == "0x10" || vcp == "0x13" || vcp == "0xD6") {
-                continue; // Skip if brightness or power state
+        for (const item of renderList) {
+            if (item.kind === "group") {
+                const groupHTML = renderGroup(item.group)
+                if (groupHTML) extraHTML.push(groupHTML)
+                continue
             }
+            const vcp = item.vcp
 
             const feature = monitor.features[vcp]
             const featSettings = featureSettings?.[vcp] ?? {}

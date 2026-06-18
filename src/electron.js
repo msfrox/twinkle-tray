@@ -481,6 +481,7 @@ const defaultSettings = {
   order: [],
   monitorFeatures: {},
   monitorFeaturesSettings: {},
+  monitorFeatureGroups: {},
   hideDisplays: {},
   hdrDisplays: {},
   sdrAsMainSliderDisplays: {},
@@ -2510,6 +2511,7 @@ ipcMain.on('export-settings', async () => {
       exportedAt: new Date().toISOString(),
       monitorFeatures: settings.monitorFeatures || {},
       monitorFeaturesSettings: settings.monitorFeaturesSettings || {},
+      monitorFeatureGroups: settings.monitorFeatureGroups || {},
       userDDCBrightnessVCPs: settings.userDDCBrightnessVCPs || {}
     }
     const result = await require('electron').dialog.showSaveDialog({
@@ -2548,9 +2550,20 @@ ipcMain.on('import-settings', async () => {
       return out
     }
 
+    // Feature groups are arrays per hwid — replace the array for any hwid present in
+    // the imported config, keeping other monitors' groups intact.
+    const mergeGroups = (base, incoming) => {
+      const out = Object.assign({}, base || {})
+      for (const hwid in (incoming || {})) {
+        out[hwid] = incoming[hwid]
+      }
+      return out
+    }
+
     writeSettings({
       monitorFeatures: mergeByHwid(settings.monitorFeatures, data.monitorFeatures),
       monitorFeaturesSettings: mergeByHwid(settings.monitorFeaturesSettings, data.monitorFeaturesSettings),
+      monitorFeatureGroups: mergeGroups(settings.monitorFeatureGroups, data.monitorFeatureGroups),
       userDDCBrightnessVCPs: Object.assign({}, settings.userDDCBrightnessVCPs || {}, data.userDDCBrightnessVCPs || {})
     }, true, true)
   } catch (e) {

@@ -11,6 +11,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| [1.17.2-ddc.6](#1172-ddc6---2026-06-18) | 2026-06-18 | Grouped / multi-control features (e.g. RGB gain) with a "move all together" link and one-click RGB preset |
 | [1.17.2-ddc.5](#1172-ddc5---2026-06-18) | 2026-06-18 | Editable built-ins (contrast/volume/input) with safe dual-path rendering; unified drag-reorder for built-ins + custom features |
 | [1.17.2-ddc.4](#1172-ddc4---2026-06-18) | 2026-06-18 | More icons, control-type-neutral labels, drag-reorder the feature list, full code-reference table |
 | [1.17.2-ddc.3](#1172-ddc3---2026-06-18) | 2026-06-18 | Auto-classification, read-only/info type, rename, drag-reorder, stepped slider, defaults/reset |
@@ -18,6 +19,20 @@ uses [Semantic Versioning](https://semver.org/).
 | [1.17.2-ddc.1](#1172-ddc1---2026-06-17) | 2026-06-17 | Custom control types, discovery + scan tools |
 
 ---
+
+## [1.17.2-ddc.6] - 2026-06-18
+
+### Added
+- **Grouped / multi-control features** (#11): bundle several VCP codes into one
+  feature (e.g. RGB gain = `0x16`/`0x18`/`0x1A`). Each member renders as a labeled
+  slider in the brightness panel under a single icon.
+  - **"Move all sliders together"** link: dragging one member shifts the rest by the
+    same amount (clamped per member), preserving their relative offsets.
+  - **"Apply to all"**: write one value to every member at once.
+  - **One-click RGB preset** seeds red/green/blue; or add any codes manually with
+    per-member label, min, max and step.
+- Groups drag-reorder in one combined list with built-in and custom features, and are
+  persisted per-monitor (`monitorFeatureGroups`), included in export/import.
 
 ## [1.17.2-ddc.5] - 2026-06-18
 

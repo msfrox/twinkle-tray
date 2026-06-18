@@ -458,6 +458,32 @@ body[data-is-win11="false"] #root {
     font-size: 14px;
 }
 
+// Custom feature: group of sliders (e.g. RGB gain) under one icon.
+.feature-group-row {
+    height: auto;
+    align-items: flex-start;
+    padding-bottom: 12px;
+
+    .feature-icon {
+        height: 34px;
+        align-items: center;
+    }
+}
+.feature-group-sliders {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .feature-group-slider {
+        .monitor-item { width: 100%; }
+        .name-row .title {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+    }
+}
+
 // Custom feature: dropdown control (custom, not a native <select>, so opening it
 // doesn't blur and auto-hide the panel; also keeps text readable in dark mode).
 .feature-dropdown-row {

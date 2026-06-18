@@ -44,7 +44,13 @@ for no marginal gain.
       input buttons until a `controlType` is saved, then uses the generic renderer. Built-ins
       and customs share one reorder list (`MonitorFeatures.jsx` `featureVcps`; `DDCCISliders.jsx`
       `orderOf`); built-ins are non-deletable and don't auto-persist a control type.
-- [ ] **#11 — Grouped / multi-control** (RGB etc.; see below).
+- [x] **#11 — Grouped / multi-control** *(done, v1.17.2-ddc.6)*. Bundle several VCP codes
+      into one feature (RGB gain etc.) shown as labeled sliders under one icon; "move all
+      together" link (delta-preserving), "apply to all", one-click RGB preset, per-member
+      label/min/max/step. Persisted per-monitor in `monitorFeatureGroups` (new settings key,
+      in defaults + export/import); rendered via `GroupFeatureSettings` (editor) and
+      `renderGroup` (panel). Reset-group is covered by "apply to all"; presets beyond RGB
+      are future work.
 - [ ] **#12 + #13 — Active/Disconnected monitor groups + dashboard** (see below; design agreed).
 - [ ] **Per-code value scale / transform** — LG Black Stabilizer `0xF9` writes 0–20 but reports
       ×5 (0–100). Optional display↔raw multiplier. (`step` already covers the display side.)
