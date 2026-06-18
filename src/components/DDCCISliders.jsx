@@ -7,7 +7,14 @@ import Slider from "./Slider"
 const builtInIcons = { "0x12": "E793", "0x62": "E767", "0x60": "E839" }
 
 export default function DDCCISliders(props) {
-    const { monitor, monitorFeatures } = props
+    // surface: "panel" (the taskbar flyout) or "dashboard" (the settings dashboard).
+    // Each feature/group has a placement (panel | dashboard | both, default both) that
+    // controls which surfaces it shows on.
+    const { monitor, monitorFeatures, surface = "panel" } = props
+    const hiddenOnSurface = (placement) => {
+        const p = placement || "both"
+        return (surface === "panel" && p === "dashboard") || (surface === "dashboard" && p === "panel")
+    }
 
     const featureSettings = window.settings?.monitorFeaturesSettings?.[monitor?.hwid[1]]
 
@@ -131,7 +138,7 @@ export default function DDCCISliders(props) {
         const featureKeys = allKeys.filter(k => !fixedKeys.includes(k) && !groupedVcps.has(k))
         const renderList = [
             ...featureKeys.map(vcp => ({ kind: "feature", vcp, order: orderOf(vcp) })),
-            ...groups.filter(g => g.enabled).map(g => ({ kind: "group", group: g, order: (g.order ?? 9999) }))
+            ...groups.filter(g => g.enabled && !hiddenOnSurface(g.placement)).map(g => ({ kind: "group", group: g, order: (g.order ?? 9999) }))
         ].sort((a, b) => a.order - b.order)
 
         for (const item of renderList) {
@@ -144,6 +151,7 @@ export default function DDCCISliders(props) {
 
             const feature = monitor.features[vcp]
             const featSettings = featureSettings?.[vcp] ?? {}
+            if (hiddenOnSurface(featSettings.placement)) continue;
             // Editable built-ins (contrast/volume/input) keep their special rendering
             // until the user explicitly chooses a control type, then use the generic path.
             const usesSpecial = (vcp === "0x12" || vcp === "0x62" || vcp === "0x60") && !featSettings.controlType

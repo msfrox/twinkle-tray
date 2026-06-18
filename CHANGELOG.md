@@ -11,6 +11,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| [1.17.2-ddc.7](#1172-ddc7---2026-06-18) | 2026-06-18 | Active/Disconnected monitor groups + collapsible monitors on the Features page; new Dashboard page; per-feature placement (Panel/Dashboard/Both) |
 | [1.17.2-ddc.6](#1172-ddc6---2026-06-18) | 2026-06-18 | Grouped / multi-control features (e.g. RGB gain) with a "move all together" link and one-click RGB preset |
 | [1.17.2-ddc.5](#1172-ddc5---2026-06-18) | 2026-06-18 | Editable built-ins (contrast/volume/input) with safe dual-path rendering; unified drag-reorder for built-ins + custom features |
 | [1.17.2-ddc.4](#1172-ddc4---2026-06-18) | 2026-06-18 | More icons, control-type-neutral labels, drag-reorder the feature list, full code-reference table |
@@ -19,6 +20,27 @@ uses [Semantic Versioning](https://semver.org/).
 | [1.17.2-ddc.1](#1172-ddc1---2026-06-17) | 2026-06-17 | Custom control types, discovery + scan tools |
 
 ---
+
+## [1.17.2-ddc.7] - 2026-06-18
+
+### Added
+- **Active / Disconnected monitor groups** (#13): the DDC/CI Features page now splits
+  displays into *Active monitors* and *Disconnected monitors*. A display with saved
+  config that isn't currently connected stays listed (and its settings stay editable)
+  instead of vanishing.
+- **Collapsible monitors**: every monitor section on the Features page and the Dashboard
+  can be collapsed to save space (disconnected ones start collapsed).
+- **Dashboard page** (#12): a new settings page that mirrors the active/disconnected +
+  collapsible layout and lets you adjust DDC/CI features without opening the taskbar
+  flyout (reuses the panel controls live).
+- **Per-feature placement** (#12): each feature/group has a **"Show in"** setting —
+  *Panel & Dashboard* (default), *Panel only*, or *Dashboard only* — so rarely-used
+  controls can live on the Dashboard instead of cluttering the flyout.
+
+### Notes
+- Disconnected displays are reconstructed from saved config (`monitorFeatures` /
+  `monitorFeaturesSettings` / `monitorFeatureGroups`); they show their internal hardware
+  ID as the name. Live control of a disconnected display resumes on reconnect.
 
 ## [1.17.2-ddc.6] - 2026-06-18
 

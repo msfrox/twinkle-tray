@@ -51,7 +51,16 @@ for no marginal gain.
       in defaults + export/import); rendered via `GroupFeatureSettings` (editor) and
       `renderGroup` (panel). Reset-group is covered by "apply to all"; presets beyond RGB
       are future work.
-- [ ] **#12 + #13 — Active/Disconnected monitor groups + dashboard** (see below; design agreed).
+- [x] **#12 + #13 — Active/Disconnected monitor groups + dashboard** *(done, v1.17.2-ddc.7)*.
+      Features page splits into Active / Disconnected groups; each monitor is collapsible;
+      disconnected displays are synthesized from saved config so settings stay editable.
+      New **Dashboard** page mirrors the same grouping/collapsible layout and renders the live
+      controls (reuses `DDCCISliders surface="dashboard"`). Per-feature/group **placement**
+      ("Show in": Panel & Dashboard / Panel only / Dashboard only). Remaining polish below.
+      *Follow-ups:* friendly names for disconnected displays (only the hwid is shown — `names`
+      is keyed by full id, not hwid); persist collapse state; on-reconnect push-vs-pull honoring
+      the "Check current values" setting; verify the "keep settings page open on power-off"
+      behavior end-to-end on hardware.
 - [ ] **Per-code value scale / transform** — LG Black Stabilizer `0xF9` writes 0–20 but reports
       ×5 (0–100). Optional display↔raw multiplier. (`step` already covers the display side.)
 - [ ] **Extend other triggers** (scroll/time-of-day/idle) to target any VCP code (per the

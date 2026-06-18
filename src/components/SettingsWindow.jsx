@@ -8,7 +8,7 @@ Run while you still can.
 
 */
 
-import React, { PureComponent } from "react";
+import React, { PureComponent, useState } from "react";
 import Titlebar from './Titlebar'
 import Slider from "./Slider";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
@@ -16,6 +16,7 @@ import Markdown from 'markdown-to-jsx';
 import TranslateReact from "../TranslateReact"
 import MonitorInfo from "./MonitorInfo"
 import MonitorFeatures from "./MonitorFeatures"
+import DDCCISliders from "./DDCCISliders"
 import { SettingsOption, SettingsChild } from "./SettingsOption";
 import SafeRender from "./SafeRender";
 
@@ -352,6 +353,11 @@ export default class SettingsWindow extends PureComponent {
                 id: "features",
                 label: T.t("SETTINGS_SIDEBAR_FEATURES"),
                 icon: "&#xE9E9;"
+            },
+            {
+                id: "dashboard",
+                label: T.t("SETTINGS_SIDEBAR_DASHBOARD"),
+                icon: "&#xECA5;"
             },
             {
                 id: "time",
@@ -849,18 +855,52 @@ export default class SettingsWindow extends PureComponent {
         }
     }
 
+    // Build minimal monitor objects for displays that have saved DDC/CI config but
+    // aren't currently connected, so their feature settings stay editable offline.
+    getKnownDisconnectedMonitors = () => {
+        try {
+            const rs = this.state.rawSettings || {}
+            const connected = new Set(Object.values(this.state.monitors || {}).map(m => m?.hwid?.[1]).filter(Boolean))
+            const known = new Set()
+            ;[rs.monitorFeatures, rs.monitorFeaturesSettings, rs.monitorFeatureGroups].forEach(map => {
+                if (map) Object.keys(map).forEach(hwid => known.add(hwid))
+            })
+            const result = []
+            known.forEach(hwid => {
+                if (!hwid || connected.has(hwid)) return;
+                const enabled = rs.monitorFeatures?.[hwid] || {}
+                const settingsMap = rs.monitorFeaturesSettings?.[hwid] || {}
+                const codes = new Set([...Object.keys(enabled), ...Object.keys(settingsMap)])
+                // Synthesize feature shapes so the editor renders without a live read.
+                const features = { "0x10": [0, 100] }
+                codes.forEach(code => {
+                    if (code === "0x60") features["0x60"] = [0, []]
+                    else if (code.indexOf("0x") === 0) features[code] = [0, 100]
+                })
+                result.push({
+                    key: "disc_" + hwid, id: null, hwid: ["", hwid, ""], name: hwid,
+                    type: "ddcci", ddcciSupported: true, disconnected: true, features, vcpCodes: {}
+                })
+            })
+            return result
+        } catch (e) { console.log(e); return [] }
+    }
+
     getFeaturesMonitors = () => {
         try {
             const onChange = () => {
                 window.sendSettings({ monitorFeaturesSettings: JSON.parse(JSON.stringify(window.settings.monitorFeaturesSettings)) })
             }
-            if (this.state.monitors == undefined || Object.keys(this.state.monitors).length == 0) {
+            const active = (this.state.monitors ? Object.values(this.state.monitors) : [])
+            const disconnected = this.getKnownDisconnectedMonitors()
+            if (active.length === 0 && disconnected.length === 0) {
                 return (<div className="no-displays-message">{T.t("GENERIC_NO_COMPATIBLE_DISPLAYS")}<br /><br /></div>)
-            } else {
-                return Object.values(this.state.monitors).map((monitor, index) => {
-                    const features = this.state?.rawSettings.monitorFeatures[monitor.hwid[1]]
-                    return (
-                        <MonitorFeatures key={monitor.key} name={getMonitorName(monitor, this.state.names)} monitor={monitor} monitorFeatures={features} toggleFeature={this.toggleFeature} T={T} onChange={onChange} onAddFeature={() => {
+            }
+            const renderMonitor = (monitor) => {
+                const features = this.state?.rawSettings?.monitorFeatures?.[monitor.hwid[1]]
+                return (
+                    <CollapsibleMonitor key={monitor.key} name={getMonitorName(monitor, this.state.names)} defaultCollapsed={monitor.disconnected ? true : false} badge={monitor.disconnected ? T.t("SETTINGS_FEATURES_DISCONNECTED") : null}>
+                        <MonitorFeatures hideHeader={true} name={getMonitorName(monitor, this.state.names)} monitor={monitor} monitorFeatures={features} toggleFeature={this.toggleFeature} T={T} onChange={onChange} onAddFeature={() => {
                             this.setState({
                                 showAddFeatureOverlay: true,
                                 addFeatureMonitor: monitor.hwid[1],
@@ -870,12 +910,56 @@ export default class SettingsWindow extends PureComponent {
                                 this.addFeatureInputRef.current.focus()
                             })
                         }} />
-                    )
-
-                })
+                    </CollapsibleMonitor>
+                )
             }
+            return (
+                <>
+                    {active.length ? <MonitorGroupHeader label={T.t("SETTINGS_FEATURES_ACTIVE")} count={active.length} icon="&#xE7F4;" /> : null}
+                    {active.map(renderMonitor)}
+                    {disconnected.length ? <MonitorGroupHeader label={T.t("SETTINGS_FEATURES_DISCONNECTED_GROUP")} count={disconnected.length} icon="&#xE8CD;" /> : null}
+                    {disconnected.map(renderMonitor)}
+                </>
+            )
         } catch (e) {
+            console.log(e)
+        }
+    }
 
+    getDashboardMonitors = () => {
+        try {
+            const active = (this.state.monitors ? Object.values(this.state.monitors).filter(m => m.type !== "none") : [])
+            const disconnected = this.getKnownDisconnectedMonitors()
+            if (active.length === 0 && disconnected.length === 0) {
+                return (<div className="no-displays-message">{T.t("GENERIC_NO_COMPATIBLE_DISPLAYS")}<br /><br /></div>)
+            }
+            const renderActive = (monitor) => {
+                const features = this.state?.rawSettings?.monitorFeatures?.[monitor.hwid[1]]
+                return (
+                    <CollapsibleMonitor key={monitor.key} name={getMonitorName(monitor, this.state.names)}>
+                        <div className="dashboard-surface">
+                            <SafeRender>
+                                <DDCCISliders monitor={monitor} monitorFeatures={features} surface="dashboard" scrollAmount={this.state.rawSettings?.scrollFlyoutAmount} />
+                            </SafeRender>
+                        </div>
+                    </CollapsibleMonitor>
+                )
+            }
+            const renderDisc = (monitor) => (
+                <CollapsibleMonitor key={monitor.key} name={getMonitorName(monitor, this.state.names)} defaultCollapsed={true} badge={T.t("SETTINGS_FEATURES_DISCONNECTED")}>
+                    <p className="option-description" style={{ lineHeight: 1.35 }}>{T.t("SETTINGS_DASHBOARD_DISCONNECTED_DESC")}</p>
+                </CollapsibleMonitor>
+            )
+            return (
+                <>
+                    {active.length ? <MonitorGroupHeader label={T.t("SETTINGS_FEATURES_ACTIVE")} count={active.length} icon="&#xE7F4;" /> : null}
+                    {active.map(renderActive)}
+                    {disconnected.length ? <MonitorGroupHeader label={T.t("SETTINGS_FEATURES_DISCONNECTED_GROUP")} count={disconnected.length} icon="&#xE8CD;" /> : null}
+                    {disconnected.map(renderDisc)}
+                </>
+            )
+        } catch (e) {
+            console.log(e)
         }
     }
 
@@ -1409,6 +1493,14 @@ export default class SettingsWindow extends PureComponent {
 
 
 
+                            <SettingsPage current={this.state.activePage} id="dashboard">
+                                <div className="pageSection">
+                                    <div className="sectionTitle">{T.t("SETTINGS_SIDEBAR_DASHBOARD")}</div>
+                                    <p>{T.t("SETTINGS_DASHBOARD_DESC")}</p>
+                                    {this.getDashboardMonitors()}
+                                </div>
+                            </SettingsPage>
+
 
 
                             <SettingsPage current={this.state.activePage} id="hotkeys">
@@ -1737,6 +1829,34 @@ function SettingsPage(props) {
         )
     }
     return null
+}
+
+// Header that separates the Active / Disconnected monitor groups.
+function MonitorGroupHeader(props) {
+    return (
+        <div className="monitor-group-header">
+            <span className="icon" dangerouslySetInnerHTML={{ __html: props.icon || "&#xE7F4;" }}></span>
+            <span className="monitor-group-label">{props.label}</span>
+            {typeof props.count === "number" ? <span className="monitor-group-count">{props.count}</span> : null}
+        </div>
+    )
+}
+
+// A monitor section that can be collapsed to save space (used on the Features page
+// and the Dashboard). The header doubles as the collapse toggle.
+function CollapsibleMonitor(props) {
+    const [collapsed, setCollapsed] = useState(props.defaultCollapsed ? true : false)
+    return (
+        <div className={"collapsible-monitor" + (collapsed ? " collapsed" : "")}>
+            <div className="collapsible-monitor-header" onClick={() => setCollapsed(!collapsed)}>
+                <span className="icon monitor-icon" dangerouslySetInnerHTML={{ __html: "&#xE7F4;" }}></span>
+                <span className="collapsible-monitor-name">{props.name}</span>
+                {props.badge ? <span className="collapsible-monitor-badge">{props.badge}</span> : null}
+                <span className="icon chevron" dangerouslySetInnerHTML={{ __html: (collapsed ? "&#xE70D;" : "&#xE70E;") }}></span>
+            </div>
+            {collapsed ? null : <div className="collapsible-monitor-body">{props.children}</div>}
+        </div>
+    )
 }
 
 function ActionItem(props) {

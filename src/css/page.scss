@@ -760,6 +760,80 @@ select {
         margin-right: 8px
     }
 }
+
+// Active / Disconnected monitor group headers (Features page + Dashboard)
+.monitor-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 22px 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.6;
+
+    .icon {
+        font-size: 14px;
+        font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+    }
+    .monitor-group-count {
+        font-weight: 600;
+        opacity: 0.8;
+        background: rgba(127, 127, 127, 0.2);
+        border-radius: 10px;
+        padding: 1px 8px;
+        font-size: 11px;
+    }
+}
+
+// Collapsible per-monitor section (Features page + Dashboard)
+.collapsible-monitor {
+    margin: 8px 0;
+    border: 1px solid rgba(127, 127, 127, 0.16);
+    border-radius: 8px;
+    overflow: hidden;
+
+    .collapsible-monitor-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+        background: var(--page-section-bg, rgba(127, 127, 127, 0.06));
+
+        &:hover { background: rgba(127, 127, 127, 0.12); }
+
+        .monitor-icon {
+            font-size: 18px;
+            opacity: 0.85;
+            font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+        }
+        .collapsible-monitor-name {
+            font-weight: 600;
+            flex: 1;
+        }
+        .collapsible-monitor-badge {
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0.75;
+            background: rgba(127, 127, 127, 0.2);
+            border-radius: 10px;
+            padding: 2px 9px;
+        }
+        .chevron {
+            font-size: 12px;
+            opacity: 0.7;
+            font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+        }
+    }
+
+    .collapsible-monitor-body {
+        padding: 4px 14px 14px;
+    }
+}
+
 .profile-monitors {
     margin: 13px 0;
     &:empty {

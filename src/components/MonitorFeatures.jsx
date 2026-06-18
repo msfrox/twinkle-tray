@@ -285,8 +285,7 @@ export default function MonitorFeatures(props) {
 
     return (
         <div key={monitor.key}>
-            <br />
-            <div className="sectionSubtitle"><div className="icon">&#xE7F4;</div><div>{monitor.name}</div></div>
+            {props.hideHeader ? null : <><br /><div className="sectionSubtitle"><div className="icon">&#xE7F4;</div><div>{monitor.name}</div></div></>}
             {extraHTML}
         </div>
     )
@@ -467,6 +466,14 @@ function MonitorFeaturesSettings(props) {
                     <option value="toggle">{T.t("SETTINGS_FEATURES_TYPE_TOGGLE")}</option>
                     <option value="actions">{T.t("SETTINGS_FEATURES_TYPE_ACTIONS")}</option>
                     <option value="info">{T.t("SETTINGS_FEATURES_TYPE_INFO")}</option>
+                </select>
+            </div>
+            <div className="field">
+                <label>{T.t("SETTINGS_FEATURES_PLACEMENT")}</label>
+                <select value={settingsObj.placement || "both"} onChange={e => onChangeHandler("placement", e.target.value)}>
+                    <option value="both">{T.t("SETTINGS_FEATURES_PLACEMENT_BOTH")}</option>
+                    <option value="panel">{T.t("SETTINGS_FEATURES_PLACEMENT_PANEL")}</option>
+                    <option value="dashboard">{T.t("SETTINGS_FEATURES_PLACEMENT_DASHBOARD")}</option>
                 </select>
             </div>
         </div>
@@ -689,6 +696,16 @@ function GroupFeatureSettings(props) {
                 <div className="feature-toggle-row">
                     <input type="checkbox" checked={(g.linked ? true : false)} data-checked={(g.linked ? true : false)} onChange={e => persist({ linked: e.target.checked })} />
                     <div className="feature-toggle-label"><span>{T.t("SETTINGS_FEATURES_GROUP_MOVE_TOGETHER")}</span></div>
+                </div>
+            </div>
+            <div className="input-row">
+                <div className="field">
+                    <label>{T.t("SETTINGS_FEATURES_PLACEMENT")}</label>
+                    <select value={g.placement || "both"} onChange={e => persist({ placement: e.target.value })}>
+                        <option value="both">{T.t("SETTINGS_FEATURES_PLACEMENT_BOTH")}</option>
+                        <option value="panel">{T.t("SETTINGS_FEATURES_PLACEMENT_PANEL")}</option>
+                        <option value="dashboard">{T.t("SETTINGS_FEATURES_PLACEMENT_DASHBOARD")}</option>
+                    </select>
                 </div>
             </div>
 

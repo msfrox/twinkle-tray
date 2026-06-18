@@ -1,0 +1,190 @@
+// Styles for the settings Dashboard surface. The dashboard reuses the panel's
+// DDCCISliders component, but the settings window doesn't load panel.scss, so the
+// control-type styles are re-declared here, scoped under .dashboard-surface to avoid
+// clashing with the rest of the settings page.
+
+.dashboard-surface {
+    padding: 4px 0 2px;
+
+    .feature-row {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        min-height: 36px;
+        padding: 6px 0;
+        gap: 4px;
+
+        & + .feature-row {
+            border-top: 1px solid rgba(127, 127, 127, 0.12);
+        }
+    }
+
+    .feature-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        min-width: 24px;
+        padding-right: 18px;
+
+        .icon-text { font-size: 12.5px; }
+    }
+
+    .monitor-item { flex: 1; }
+
+    // Buttons / action buttons
+    .feature-buttons-row {
+        align-items: flex-start;
+
+        .feature-icon { height: 30px; align-items: center; }
+    }
+    .feature-buttons {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+
+        .button {
+            padding: 6px 10px;
+            font-size: 12px;
+            line-height: 1.1;
+        }
+    }
+
+    // Input button row
+    .feature-inputs {
+        align-items: flex-start;
+
+        & > div {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+    }
+
+    // Read-only info value
+    .feature-info-row {
+        align-items: center;
+        .feature-icon { height: 30px; align-items: center; }
+    }
+    .feature-info-value {
+        flex: 1;
+        color: var(--page-text);
+        opacity: 0.85;
+        font-size: 14px;
+    }
+
+    // Custom dropdown (not a native <select>)
+    .feature-dropdown-row {
+        align-items: flex-start;
+        .feature-icon { height: 30px; align-items: center; }
+    }
+    .feature-dropdown {
+        flex: 1;
+        position: relative;
+        max-width: 280px;
+    }
+    .feature-dropdown-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        height: 32px;
+        padding: 0 10px;
+        color: var(--page-text);
+        background: var(--button-background, rgba(127, 127, 127, 0.15));
+        border: 1px solid var(--button-border, transparent);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+
+        .chevron { font-size: 12px; opacity: 0.7; }
+        &:hover { background: var(--button-highlight, rgba(127, 127, 127, 0.25)); }
+    }
+    .feature-dropdown-list {
+        margin-top: 4px;
+        max-height: 240px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        background: var(--button-background, rgba(127, 127, 127, 0.15));
+        border: 1px solid var(--button-border, transparent);
+        border-radius: 6px;
+        padding: 4px;
+    }
+    .feature-dropdown-option {
+        text-align: left;
+        color: var(--page-text);
+        background: transparent;
+        border: 0;
+        border-radius: 4px;
+        padding: 7px 10px;
+        cursor: pointer;
+        font-size: 13px;
+
+        &:hover { background: var(--button-highlight, rgba(127, 127, 127, 0.25)); }
+        &.selected {
+            background: var(--button-primary-background, #60cdff);
+            color: var(--page-background);
+        }
+    }
+
+    // Toggle switch
+    .feature-toggle-switch {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+
+        input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+        .track {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            border-radius: 20px;
+            background: var(--button-background, rgba(127, 127, 127, 0.2));
+            box-shadow: inset 0 0 0 1px var(--button-border, transparent);
+            transition: background 0.15s ease;
+
+            &:before {
+                content: '';
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: var(--page-text);
+                transition: transform 0.15s ease;
+            }
+        }
+        input:checked + .track {
+            background: var(--button-primary-background, #60cdff);
+            &:before {
+                transform: translateX(20px);
+                background: var(--page-background);
+            }
+        }
+    }
+
+    // Group of sliders (e.g. RGB gain)
+    .feature-group-row {
+        align-items: flex-start;
+        .feature-icon { height: 34px; align-items: center; }
+    }
+    .feature-group-sliders {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .feature-group-slider {
+            .monitor-item { width: 100%; }
+            .name-row .title { font-size: 12px; opacity: 0.85; }
+        }
+    }
+}
